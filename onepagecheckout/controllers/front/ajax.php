@@ -233,13 +233,54 @@ class OnePageCheckoutAjaxModuleFrontController extends ModuleFrontController
         $customer = $this->context->customer;
         $is_new_customer = false;
 
-        // If not logged in, create guest or new customer
-        if (!$customer->isLogged()) {
-            // Check if email already exists
+        // Check if we already have a customer from cart, cookie, or context
+        $existing_customer_id = 0;
+
+        // Priority 1: Check cart's customer
+        if ($this->context->cart->id_customer > 0) {
+            $existing_customer_id = (int)$this->context->cart->id_customer;
+        }
+        // Priority 2: Check cookie
+        elseif (!empty($this->context->cookie->id_customer)) {
+            $existing_customer_id = (int)$this->context->cookie->id_customer;
+        }
+        // Priority 3: Check context customer
+        elseif ($customer->id > 0) {
+            $existing_customer_id = (int)$customer->id;
+        }
+
+        // If we have an existing customer, load and update it
+        if ($existing_customer_id > 0) {
+            $customer = new Customer($existing_customer_id);
+            if (Validate::isLoadedObject($customer)) {
+                // Update existing customer
+                $customer->firstname = $firstname;
+                $customer->lastname = $lastname;
+                if ($birthday_day && $birthday_month && $birthday_year) {
+                    $customer->birthday = $birthday_year . '-' . $birthday_month . '-' . $birthday_day;
+                }
+                if (!empty($password) && Validate::isPasswd($password)) {
+                    $customer->passwd = Tools::hash($password);
+                    $this->context->cookie->passwd = $customer->passwd;
+                }
+                $customer->update();
+
+                // Ensure cart is linked
+                if ($this->context->cart->id_customer != $customer->id) {
+                    $this->context->cart->id_customer = (int)$customer->id;
+                    $this->context->cart->secure_key = $customer->secure_key;
+                    $this->context->cart->save();
+                }
+
+                // Update context
+                $this->context->customer = $customer;
+            }
+        } else {
+            // No existing customer - check if email already exists (registered user)
             $existing_customer = Customer::customerExists($email, true);
 
             if ($existing_customer) {
-                // Email exists, require login
+                // Email exists as registered user, require login
                 $this->json_response = [
                     'success' => false,
                     'email_exists' => true,
@@ -306,18 +347,6 @@ class OnePageCheckoutAjaxModuleFrontController extends ModuleFrontController
             $this->context->cart->id_customer = (int)$customer->id;
             $this->context->cart->secure_key = $customer->secure_key;
             $this->context->cart->save();
-        } else {
-            // Update existing customer
-            $customer->firstname = $firstname;
-            $customer->lastname = $lastname;
-            if ($birthday_day && $birthday_month && $birthday_year) {
-                $customer->birthday = $birthday_year . '-' . $birthday_month . '-' . $birthday_day;
-            }
-            if (!empty($password) && Validate::isPasswd($password)) {
-                $customer->passwd = Tools::hash($password);
-                $this->context->cookie->passwd = $customer->passwd;
-            }
-            $customer->update();
         }
 
         // Store checkout session data
