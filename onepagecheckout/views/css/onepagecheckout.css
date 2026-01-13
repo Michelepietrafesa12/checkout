@@ -95,6 +95,8 @@
 .opc-checkout-container .opc-col-right {
     flex: 0 0 380px !important;
     width: 380px !important;
+    min-width: 380px !important;
+    max-width: 380px !important;
     position: sticky !important;
     top: 100px !important;
 }
@@ -110,6 +112,10 @@
         flex: 1 1 100% !important;
         width: 100% !important;
         position: static !important;
+        order: unset !important;
+    }
+    .opc-checkout-container .opc-col-right {
+        margin-top: 20px !important;
     }
 }
 
@@ -411,12 +417,21 @@
    RIGHT COLUMN - SUMMARY BOX
    ======================================== */
 
+.opc-checkout-container .opc-col-right,
+.opc-checkout-container .opc-col-right * {
+    box-sizing: border-box !important;
+}
+
+.opc-checkout-container .opc-col-right .opc-summary-box,
 .opc-checkout-container .opc-summary-box {
     background: #fff !important;
     border: 1px solid #e9ecef !important;
     border-radius: 8px !important;
     padding: 24px !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    display: block !important;
 }
 
 /* Cart Items */
@@ -424,13 +439,16 @@
     margin-bottom: 20px !important;
     padding-bottom: 16px !important;
     border-bottom: 1px solid #e9ecef !important;
+    width: 100% !important;
 }
 
 .opc-checkout-container .opc-cart-item {
     display: flex !important;
+    flex-direction: row !important;
     align-items: center !important;
     gap: 12px !important;
     padding: 10px 0 !important;
+    width: 100% !important;
 }
 
 .opc-checkout-container .opc-cart-item:not(:last-child) {
@@ -479,11 +497,14 @@
     padding-bottom: 16px !important;
     margin-bottom: 16px !important;
     border-bottom: 1px solid #e9ecef !important;
+    width: 100% !important;
 }
 
 .opc-checkout-container .opc-promo-form {
     display: flex !important;
+    flex-direction: row !important;
     gap: 8px !important;
+    width: 100% !important;
 }
 
 .opc-checkout-container .opc-promo-form .opc-input {
@@ -556,14 +577,28 @@
 .opc-checkout-container .opc-summary-totals {
     padding: 16px 0 !important;
     border-bottom: 1px solid #e9ecef !important;
+    width: 100% !important;
 }
 
 .opc-checkout-container .opc-summary-line {
     display: flex !important;
+    flex-direction: row !important;
     justify-content: space-between !important;
     align-items: center !important;
     padding: 6px 0 !important;
     font-size: 14px !important;
+    width: 100% !important;
+}
+
+.opc-checkout-container .opc-summary-line > span:first-child {
+    flex: 1 1 auto !important;
+    text-align: left !important;
+}
+
+.opc-checkout-container .opc-summary-line > span:last-child {
+    flex: 0 0 auto !important;
+    text-align: right !important;
+    white-space: nowrap !important;
 }
 
 .opc-checkout-container .opc-line-discount span:last-child {
@@ -586,6 +621,7 @@
 .opc-checkout-container .opc-notes-section {
     padding: 16px 0 !important;
     border-bottom: 1px solid #e9ecef !important;
+    width: 100% !important;
 }
 
 .opc-checkout-container .opc-notes-section > label {
@@ -604,6 +640,7 @@
 /* Actions Section */
 .opc-checkout-container .opc-actions-section {
     padding-top: 20px !important;
+    width: 100% !important;
 }
 
 /* Terms Checkbox */
