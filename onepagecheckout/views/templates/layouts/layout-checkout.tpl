@@ -4,6 +4,19 @@
     {block name='head'}
         {include file='_partials/head.tpl'}
     {/block}
+    <style>
+        :root {
+            --opc-primary: {$opc_colors.primary|default:'#008060'};
+            --opc-primary-hover: {$opc_colors.primary_hover|default:'#006e52'};
+            --opc-text: {$opc_colors.text|default:'#333333'};
+            --opc-text-secondary: {$opc_colors.text_secondary|default:'#6b7177'};
+            --opc-border: {$opc_colors.border|default:'#d9d9d9'};
+            --opc-background: {$opc_colors.background|default:'#fafafa'};
+            --opc-error: {$opc_colors.error|default:'#d72c0d'};
+            --opc-success: {$opc_colors.success|default:'#008060'};
+            --opc-button-radius: {$opc_colors.button_radius|default:'5px'};
+        }
+    </style>
 </head>
 <body id="{$page.page_name}" class="{$page.body_classes|classnames} opc-body">
     {block name='hook_after_body_opening_tag'}

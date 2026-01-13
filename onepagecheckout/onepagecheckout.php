@@ -46,7 +46,17 @@ class OnePageCheckout extends Module
             && Configuration::updateValue('OPC_GUEST_CHECKOUT', 1)
             && Configuration::updateValue('OPC_SHOW_NEWSLETTER', 1)
             && Configuration::updateValue('OPC_REQUIRE_PHONE', 0)
-            && Configuration::updateValue('OPC_ENABLED', 1);
+            && Configuration::updateValue('OPC_ENABLED', 1)
+            // Color settings - Shopify-like defaults
+            && Configuration::updateValue('OPC_COLOR_PRIMARY', '#008060')
+            && Configuration::updateValue('OPC_COLOR_PRIMARY_HOVER', '#006e52')
+            && Configuration::updateValue('OPC_COLOR_TEXT', '#333333')
+            && Configuration::updateValue('OPC_COLOR_TEXT_SECONDARY', '#6b7177')
+            && Configuration::updateValue('OPC_COLOR_BORDER', '#d9d9d9')
+            && Configuration::updateValue('OPC_COLOR_BACKGROUND', '#fafafa')
+            && Configuration::updateValue('OPC_COLOR_ERROR', '#d72c0d')
+            && Configuration::updateValue('OPC_COLOR_SUCCESS', '#008060')
+            && Configuration::updateValue('OPC_BUTTON_RADIUS', '5');
     }
 
     public function uninstall()
@@ -58,7 +68,16 @@ class OnePageCheckout extends Module
             && Configuration::deleteByName('OPC_GUEST_CHECKOUT')
             && Configuration::deleteByName('OPC_SHOW_NEWSLETTER')
             && Configuration::deleteByName('OPC_REQUIRE_PHONE')
-            && Configuration::deleteByName('OPC_ENABLED');
+            && Configuration::deleteByName('OPC_ENABLED')
+            && Configuration::deleteByName('OPC_COLOR_PRIMARY')
+            && Configuration::deleteByName('OPC_COLOR_PRIMARY_HOVER')
+            && Configuration::deleteByName('OPC_COLOR_TEXT')
+            && Configuration::deleteByName('OPC_COLOR_TEXT_SECONDARY')
+            && Configuration::deleteByName('OPC_COLOR_BORDER')
+            && Configuration::deleteByName('OPC_COLOR_BACKGROUND')
+            && Configuration::deleteByName('OPC_COLOR_ERROR')
+            && Configuration::deleteByName('OPC_COLOR_SUCCESS')
+            && Configuration::deleteByName('OPC_BUTTON_RADIUS');
     }
 
     /**
@@ -174,7 +193,34 @@ class OnePageCheckout extends Module
             $output .= $this->displayConfirmation($this->l('Impostazioni salvate'));
         }
 
-        return $output . $this->renderConfigForm();
+        if (Tools::isSubmit('submitOpcColors')) {
+            Configuration::updateValue('OPC_COLOR_PRIMARY', pSQL(Tools::getValue('OPC_COLOR_PRIMARY')));
+            Configuration::updateValue('OPC_COLOR_PRIMARY_HOVER', pSQL(Tools::getValue('OPC_COLOR_PRIMARY_HOVER')));
+            Configuration::updateValue('OPC_COLOR_TEXT', pSQL(Tools::getValue('OPC_COLOR_TEXT')));
+            Configuration::updateValue('OPC_COLOR_TEXT_SECONDARY', pSQL(Tools::getValue('OPC_COLOR_TEXT_SECONDARY')));
+            Configuration::updateValue('OPC_COLOR_BORDER', pSQL(Tools::getValue('OPC_COLOR_BORDER')));
+            Configuration::updateValue('OPC_COLOR_BACKGROUND', pSQL(Tools::getValue('OPC_COLOR_BACKGROUND')));
+            Configuration::updateValue('OPC_COLOR_ERROR', pSQL(Tools::getValue('OPC_COLOR_ERROR')));
+            Configuration::updateValue('OPC_COLOR_SUCCESS', pSQL(Tools::getValue('OPC_COLOR_SUCCESS')));
+            Configuration::updateValue('OPC_BUTTON_RADIUS', (int)Tools::getValue('OPC_BUTTON_RADIUS'));
+            $output .= $this->displayConfirmation($this->l('Colori salvati'));
+        }
+
+        if (Tools::isSubmit('resetOpcColors')) {
+            // Reset to Shopify-like defaults
+            Configuration::updateValue('OPC_COLOR_PRIMARY', '#008060');
+            Configuration::updateValue('OPC_COLOR_PRIMARY_HOVER', '#006e52');
+            Configuration::updateValue('OPC_COLOR_TEXT', '#333333');
+            Configuration::updateValue('OPC_COLOR_TEXT_SECONDARY', '#6b7177');
+            Configuration::updateValue('OPC_COLOR_BORDER', '#d9d9d9');
+            Configuration::updateValue('OPC_COLOR_BACKGROUND', '#fafafa');
+            Configuration::updateValue('OPC_COLOR_ERROR', '#d72c0d');
+            Configuration::updateValue('OPC_COLOR_SUCCESS', '#008060');
+            Configuration::updateValue('OPC_BUTTON_RADIUS', '5');
+            $output .= $this->displayConfirmation($this->l('Colori ripristinati ai valori predefiniti (stile Shopify)'));
+        }
+
+        return $output . $this->renderConfigForm() . $this->renderColorForm();
     }
 
     protected function renderConfigForm()
@@ -249,6 +295,136 @@ class OnePageCheckout extends Module
         ];
 
         return $helper->generateForm([$fields_form]);
+    }
+
+    protected function renderColorForm()
+    {
+        $fields_form = [
+            'form' => [
+                'legend' => [
+                    'title' => $this->l('Personalizzazione Colori e Stile'),
+                    'icon' => 'icon-paint-brush',
+                ],
+                'description' => $this->l('Personalizza i colori del checkout. Lo stile predefinito è simile a Shopify per un\'esperienza utente moderna e pulita.'),
+                'input' => [
+                    [
+                        'type' => 'color',
+                        'label' => $this->l('Colore Primario'),
+                        'name' => 'OPC_COLOR_PRIMARY',
+                        'desc' => $this->l('Colore principale per pulsanti e accenti (default Shopify: #008060)'),
+                        'class' => 'mColorPicker',
+                    ],
+                    [
+                        'type' => 'color',
+                        'label' => $this->l('Colore Primario Hover'),
+                        'name' => 'OPC_COLOR_PRIMARY_HOVER',
+                        'desc' => $this->l('Colore quando il mouse passa sopra elementi primari'),
+                        'class' => 'mColorPicker',
+                    ],
+                    [
+                        'type' => 'color',
+                        'label' => $this->l('Colore Testo Principale'),
+                        'name' => 'OPC_COLOR_TEXT',
+                        'desc' => $this->l('Colore del testo principale'),
+                        'class' => 'mColorPicker',
+                    ],
+                    [
+                        'type' => 'color',
+                        'label' => $this->l('Colore Testo Secondario'),
+                        'name' => 'OPC_COLOR_TEXT_SECONDARY',
+                        'desc' => $this->l('Colore per testi secondari e descrizioni'),
+                        'class' => 'mColorPicker',
+                    ],
+                    [
+                        'type' => 'color',
+                        'label' => $this->l('Colore Bordi'),
+                        'name' => 'OPC_COLOR_BORDER',
+                        'desc' => $this->l('Colore dei bordi e separatori'),
+                        'class' => 'mColorPicker',
+                    ],
+                    [
+                        'type' => 'color',
+                        'label' => $this->l('Colore Sfondo'),
+                        'name' => 'OPC_COLOR_BACKGROUND',
+                        'desc' => $this->l('Colore di sfondo della pagina'),
+                        'class' => 'mColorPicker',
+                    ],
+                    [
+                        'type' => 'color',
+                        'label' => $this->l('Colore Errore'),
+                        'name' => 'OPC_COLOR_ERROR',
+                        'desc' => $this->l('Colore per messaggi di errore'),
+                        'class' => 'mColorPicker',
+                    ],
+                    [
+                        'type' => 'color',
+                        'label' => $this->l('Colore Successo'),
+                        'name' => 'OPC_COLOR_SUCCESS',
+                        'desc' => $this->l('Colore per messaggi di successo'),
+                        'class' => 'mColorPicker',
+                    ],
+                    [
+                        'type' => 'text',
+                        'label' => $this->l('Raggio Bordi Pulsanti (px)'),
+                        'name' => 'OPC_BUTTON_RADIUS',
+                        'desc' => $this->l('Arrotondamento angoli dei pulsanti in pixel (Shopify usa 5px)'),
+                        'class' => 'fixed-width-xs',
+                        'suffix' => 'px',
+                    ],
+                ],
+                'buttons' => [
+                    [
+                        'title' => $this->l('Ripristina Valori Shopify'),
+                        'icon' => 'process-icon-refresh',
+                        'name' => 'resetOpcColors',
+                        'type' => 'submit',
+                        'class' => 'btn btn-default pull-left',
+                    ],
+                ],
+                'submit' => [
+                    'title' => $this->l('Salva Colori'),
+                ],
+            ],
+        ];
+
+        $helper = new HelperForm();
+        $helper->module = $this;
+        $helper->name_controller = $this->name;
+        $helper->token = Tools::getAdminTokenLite('AdminModules');
+        $helper->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name;
+        $helper->submit_action = 'submitOpcColors';
+        $helper->default_form_language = (int)Configuration::get('PS_LANG_DEFAULT');
+        $helper->fields_value = [
+            'OPC_COLOR_PRIMARY' => Configuration::get('OPC_COLOR_PRIMARY') ?: '#008060',
+            'OPC_COLOR_PRIMARY_HOVER' => Configuration::get('OPC_COLOR_PRIMARY_HOVER') ?: '#006e52',
+            'OPC_COLOR_TEXT' => Configuration::get('OPC_COLOR_TEXT') ?: '#333333',
+            'OPC_COLOR_TEXT_SECONDARY' => Configuration::get('OPC_COLOR_TEXT_SECONDARY') ?: '#6b7177',
+            'OPC_COLOR_BORDER' => Configuration::get('OPC_COLOR_BORDER') ?: '#d9d9d9',
+            'OPC_COLOR_BACKGROUND' => Configuration::get('OPC_COLOR_BACKGROUND') ?: '#fafafa',
+            'OPC_COLOR_ERROR' => Configuration::get('OPC_COLOR_ERROR') ?: '#d72c0d',
+            'OPC_COLOR_SUCCESS' => Configuration::get('OPC_COLOR_SUCCESS') ?: '#008060',
+            'OPC_BUTTON_RADIUS' => Configuration::get('OPC_BUTTON_RADIUS') ?: '5',
+        ];
+
+        return $helper->generateForm([$fields_form]);
+    }
+
+    /**
+     * Get color configuration as CSS variables
+     */
+    public function getColorConfig()
+    {
+        return [
+            'primary' => Configuration::get('OPC_COLOR_PRIMARY') ?: '#008060',
+            'primary_hover' => Configuration::get('OPC_COLOR_PRIMARY_HOVER') ?: '#006e52',
+            'text' => Configuration::get('OPC_COLOR_TEXT') ?: '#333333',
+            'text_secondary' => Configuration::get('OPC_COLOR_TEXT_SECONDARY') ?: '#6b7177',
+            'border' => Configuration::get('OPC_COLOR_BORDER') ?: '#d9d9d9',
+            'background' => Configuration::get('OPC_COLOR_BACKGROUND') ?: '#fafafa',
+            'error' => Configuration::get('OPC_COLOR_ERROR') ?: '#d72c0d',
+            'success' => Configuration::get('OPC_COLOR_SUCCESS') ?: '#008060',
+            'button_radius' => (Configuration::get('OPC_BUTTON_RADIUS') ?: '5') . 'px',
+        ];
     }
 
     /**

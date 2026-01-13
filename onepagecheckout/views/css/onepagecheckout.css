@@ -1,27 +1,46 @@
 /**
- * One Page Checkout - Smart UX Style
- * Clean, modern design with inline labels
+ * One Page Checkout - Shopify-like Style
+ * Clean, modern design with CSS variables for customization
  */
+
+/* ========================================
+   CSS VARIABLES (fallbacks if not set in template)
+   ======================================== */
+
+:root {
+    --opc-primary: #008060;
+    --opc-primary-hover: #006e52;
+    --opc-text: #333333;
+    --opc-text-secondary: #6b7177;
+    --opc-border: #d9d9d9;
+    --opc-background: #fafafa;
+    --opc-error: #d72c0d;
+    --opc-success: #008060;
+    --opc-button-radius: 5px;
+    --opc-white: #ffffff;
+    --opc-focus-ring: rgba(0, 128, 96, 0.25);
+}
 
 /* ========================================
    RESET & BASE
    ======================================== */
 
 .opc-body {
-    background: #f8f9fa !important;
+    background: var(--opc-background) !important;
 }
 
 #content.opc-checkout-container,
 .opc-checkout-container {
-    max-width: 1200px !important;
+    max-width: 1100px !important;
     margin: 0 auto !important;
-    padding: 30px 20px !important;
+    padding: 20px !important;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
     font-size: 14px !important;
-    color: #333 !important;
+    color: var(--opc-text) !important;
     background: transparent !important;
     float: none !important;
     width: 100% !important;
+    line-height: 1.5 !important;
 }
 
 .opc-checkout-container *,
@@ -31,20 +50,20 @@
 }
 
 /* ========================================
-   HEADER
+   HEADER - Shopify Style
    ======================================== */
 
 .opc-minimal-header {
-    background: #fff !important;
-    border-bottom: 1px solid #e9ecef !important;
-    padding: 15px 20px !important;
+    background: var(--opc-white) !important;
+    border-bottom: 1px solid var(--opc-border) !important;
+    padding: 16px 20px !important;
     position: sticky !important;
     top: 0 !important;
     z-index: 100 !important;
 }
 
 .opc-header-container {
-    max-width: 1200px !important;
+    max-width: 1100px !important;
     margin: 0 auto !important;
     display: flex !important;
     align-items: center !important;
@@ -56,18 +75,18 @@
 }
 
 .opc-logo {
-    max-height: 45px !important;
+    max-height: 40px !important;
     width: auto !important;
 }
 
 .opc-header-title {
     flex: 1 1 auto !important;
     text-align: center !important;
-    font-size: 16px !important;
-    font-weight: 600 !important;
-    color: #333 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 1px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: var(--opc-text-secondary) !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
 }
 
 .opc-header-spacer {
@@ -75,20 +94,20 @@
 }
 
 /* ========================================
-   LAYOUT - TWO COLUMNS
+   LAYOUT - TWO COLUMNS (Shopify Style)
    ======================================== */
 
 .opc-checkout-container .opc-row {
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
-    gap: 30px !important;
+    gap: 40px !important;
     align-items: flex-start !important;
 }
 
 .opc-checkout-container .opc-col-left {
     flex: 1 1 auto !important;
-    max-width: 700px !important;
+    max-width: 660px !important;
     min-width: 0 !important;
 }
 
@@ -98,12 +117,13 @@
     min-width: 380px !important;
     max-width: 380px !important;
     position: sticky !important;
-    top: 100px !important;
+    top: 90px !important;
 }
 
 @media (max-width: 992px) {
     .opc-checkout-container .opc-row {
         flex-direction: column !important;
+        gap: 24px !important;
     }
     .opc-checkout-container .opc-col-left,
     .opc-checkout-container .opc-col-right {
@@ -112,77 +132,71 @@
         flex: 1 1 100% !important;
         width: 100% !important;
         position: static !important;
-        order: unset !important;
-    }
-    .opc-checkout-container .opc-col-right {
-        margin-top: 20px !important;
     }
 }
 
 /* ========================================
-   SECTIONS
+   SECTIONS - Shopify Style
    ======================================== */
 
 .opc-checkout-container .opc-section {
-    background: #fff !important;
-    border: 1px solid #e9ecef !important;
+    background: var(--opc-white) !important;
+    border: 1px solid var(--opc-border) !important;
     border-radius: 8px !important;
-    padding: 24px !important;
-    margin-bottom: 20px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+    padding: 20px !important;
+    margin-bottom: 16px !important;
+    box-shadow: none !important;
 }
 
 .opc-checkout-container .opc-section-title {
-    font-size: 15px !important;
+    font-size: 18px !important;
     font-weight: 600 !important;
-    color: #333 !important;
-    margin: 0 0 20px 0 !important;
+    color: var(--opc-text) !important;
+    margin: 0 0 16px 0 !important;
     padding-bottom: 12px !important;
-    border-bottom: 2px solid #c8e600 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
+    border-bottom: 1px solid var(--opc-border) !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
 }
 
 /* ========================================
-   INLINE FORM FIELDS
+   FORM FIELDS - Shopify Style
    ======================================== */
 
 .opc-checkout-container .opc-form-inline {
     display: flex !important;
     flex-direction: column !important;
-    gap: 16px !important;
-}
-
-/* Single Field - Label Left, Input Right */
-.opc-checkout-container .opc-field {
-    display: flex !important;
-    align-items: flex-start !important;
     gap: 12px !important;
 }
 
+.opc-checkout-container .opc-field {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+}
+
 .opc-checkout-container .opc-field > label {
-    flex: 0 0 120px !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
     font-weight: 500 !important;
-    color: #555 !important;
-    padding-top: 12px !important;
+    color: var(--opc-text) !important;
+    padding: 0 !important;
     text-align: left !important;
+    margin-bottom: 4px !important;
 }
 
 .opc-checkout-container .opc-field > label .required {
-    color: #dc3545 !important;
+    color: var(--opc-error) !important;
     font-weight: 400 !important;
 }
 
 .opc-checkout-container .opc-field-input {
-    flex: 1 !important;
-    min-width: 0 !important;
+    width: 100% !important;
 }
 
 /* Field Row - Multiple fields in a row */
 .opc-checkout-container .opc-field-row {
     display: flex !important;
-    gap: 16px !important;
+    gap: 12px !important;
 }
 
 .opc-checkout-container .opc-field-half {
@@ -197,15 +211,7 @@
     flex: 1 1 65% !important;
 }
 
-@media (max-width: 768px) {
-    .opc-checkout-container .opc-field {
-        flex-direction: column !important;
-        gap: 6px !important;
-    }
-    .opc-checkout-container .opc-field > label {
-        flex: none !important;
-        padding-top: 0 !important;
-    }
+@media (max-width: 576px) {
     .opc-checkout-container .opc-field-row {
         flex-direction: column !important;
     }
@@ -217,7 +223,7 @@
 }
 
 /* ========================================
-   INPUT ELEMENTS
+   INPUT ELEMENTS - Shopify Style
    ======================================== */
 
 .opc-checkout-container .opc-input,
@@ -230,15 +236,16 @@
 .opc-checkout-container select,
 .opc-checkout-container textarea {
     width: 100% !important;
-    padding: 11px 14px !important;
-    border: 1px solid #dee2e6 !important;
-    border-radius: 6px !important;
-    font-size: 14px !important;
-    color: #333 !important;
-    background: #fff !important;
-    transition: border-color 0.2s, box-shadow 0.2s !important;
+    padding: 12px !important;
+    border: 1px solid var(--opc-border) !important;
+    border-radius: var(--opc-button-radius) !important;
+    font-size: 16px !important;
+    color: var(--opc-text) !important;
+    background: var(--opc-white) !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
     height: auto !important;
     line-height: 1.5 !important;
+    -webkit-appearance: none !important;
 }
 
 .opc-checkout-container .opc-input:focus,
@@ -248,14 +255,20 @@
 .opc-checkout-container select:focus,
 .opc-checkout-container textarea:focus {
     outline: none !important;
-    border-color: #c8e600 !important;
-    box-shadow: 0 0 0 3px rgba(200, 230, 0, 0.15) !important;
+    border-color: var(--opc-primary) !important;
+    box-shadow: 0 0 0 3px var(--opc-focus-ring) !important;
+}
+
+.opc-checkout-container .opc-input::placeholder,
+.opc-checkout-container input::placeholder,
+.opc-checkout-container textarea::placeholder {
+    color: var(--opc-text-secondary) !important;
 }
 
 .opc-checkout-container .opc-input-disabled,
 .opc-checkout-container input:disabled {
-    background: #f8f9fa !important;
-    color: #6c757d !important;
+    background: var(--opc-background) !important;
+    color: var(--opc-text-secondary) !important;
     cursor: not-allowed !important;
 }
 
@@ -263,7 +276,7 @@
 .opc-checkout-container select {
     appearance: none !important;
     -webkit-appearance: none !important;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E") !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7177' d='M6 8L1 3h10z'/%3E%3C/svg%3E") !important;
     background-repeat: no-repeat !important;
     background-position: right 12px center !important;
     padding-right: 36px !important;
@@ -278,33 +291,33 @@
 /* Field Hints */
 .opc-checkout-container .opc-field-hint {
     font-size: 12px !important;
-    margin-top: 6px !important;
-    color: #6c757d !important;
+    margin-top: 4px !important;
+    color: var(--opc-text-secondary) !important;
 }
 
 .opc-checkout-container .opc-field-hint.opc-error {
-    color: #dc3545 !important;
+    color: var(--opc-error) !important;
 }
 
 .opc-checkout-container .opc-field-hint a {
-    color: #c8e600 !important;
-    font-weight: 600 !important;
-    text-decoration: none !important;
+    color: var(--opc-primary) !important;
+    font-weight: 500 !important;
+    text-decoration: underline !important;
     margin-left: 4px !important;
 }
 
 .opc-checkout-container .opc-field-hint a:hover {
-    text-decoration: underline !important;
+    color: var(--opc-primary-hover) !important;
 }
 
 /* Login Box */
 .opc-checkout-container .opc-login-box {
     display: flex !important;
-    gap: 10px !important;
-    margin-top: 10px !important;
+    gap: 8px !important;
+    margin-top: 8px !important;
     padding: 12px !important;
-    background: #f8f9fa !important;
-    border-radius: 6px !important;
+    background: var(--opc-background) !important;
+    border-radius: var(--opc-button-radius) !important;
 }
 
 .opc-checkout-container .opc-login-box .opc-input {
@@ -312,36 +325,36 @@
 }
 
 /* ========================================
-   OPTION CARDS (Shipping & Payment)
+   OPTION CARDS (Shipping & Payment) - Shopify Style
    ======================================== */
 
 .opc-checkout-container .opc-carriers-list,
 .opc-checkout-container .opc-payment-list {
     display: flex !important;
     flex-direction: column !important;
-    gap: 10px !important;
+    gap: 8px !important;
 }
 
 .opc-checkout-container .opc-option-card {
     display: flex !important;
     align-items: center !important;
-    padding: 14px 16px !important;
-    border: 1px solid #dee2e6 !important;
-    border-radius: 6px !important;
+    padding: 16px !important;
+    border: 1px solid var(--opc-border) !important;
+    border-radius: var(--opc-button-radius) !important;
     cursor: pointer !important;
-    transition: all 0.2s !important;
-    background: #fff !important;
+    transition: border-color 0.15s ease, background-color 0.15s ease !important;
+    background: var(--opc-white) !important;
 }
 
 .opc-checkout-container .opc-option-card:hover {
-    border-color: #c8e600 !important;
-    background: #fdfff5 !important;
+    border-color: var(--opc-primary) !important;
+    background: var(--opc-white) !important;
 }
 
 .opc-checkout-container .opc-option-card.selected {
-    border-color: #c8e600 !important;
-    background: #fdfff5 !important;
-    box-shadow: 0 0 0 1px #c8e600 !important;
+    border-color: var(--opc-primary) !important;
+    background: rgba(0, 128, 96, 0.04) !important;
+    box-shadow: 0 0 0 1px var(--opc-primary) !important;
 }
 
 .opc-checkout-container .opc-option-card input[type="radio"] {
@@ -349,7 +362,7 @@
     width: 18px !important;
     height: 18px !important;
     margin-right: 12px !important;
-    accent-color: #c8e600 !important;
+    accent-color: var(--opc-primary) !important;
     cursor: pointer !important;
 }
 
@@ -357,64 +370,71 @@
     flex: 1 !important;
     display: flex !important;
     align-items: center !important;
-    gap: 10px !important;
+    gap: 12px !important;
 }
 
 .opc-checkout-container .opc-option-name {
     font-weight: 500 !important;
-    color: #333 !important;
+    color: var(--opc-text) !important;
+    font-size: 14px !important;
 }
 
 .opc-checkout-container .opc-option-price {
     font-weight: 600 !important;
-    color: #c8e600 !important;
+    color: var(--opc-text) !important;
     margin-left: auto !important;
+    font-size: 14px !important;
 }
 
 /* Payment Card Wrapper */
 .opc-checkout-container .opc-payment-card {
-    border: 1px solid #dee2e6 !important;
-    border-radius: 6px !important;
+    border: 1px solid var(--opc-border) !important;
+    border-radius: var(--opc-button-radius) !important;
     overflow: hidden !important;
-    transition: border-color 0.2s !important;
+    transition: border-color 0.15s ease !important;
+    background: var(--opc-white) !important;
 }
 
 .opc-checkout-container .opc-payment-card.selected {
-    border-color: #c8e600 !important;
+    border-color: var(--opc-primary) !important;
+    box-shadow: 0 0 0 1px var(--opc-primary) !important;
 }
 
 .opc-checkout-container .opc-payment-card .opc-option-card {
     border: none !important;
     border-radius: 0 !important;
+    box-shadow: none !important;
 }
 
 .opc-checkout-container .opc-payment-logo {
-    max-width: 40px !important;
+    max-width: 38px !important;
     max-height: 24px !important;
     object-fit: contain !important;
 }
 
 .opc-checkout-container .opc-payment-extra {
-    padding: 14px 16px !important;
-    background: #f8f9fa !important;
-    border-top: 1px solid #e9ecef !important;
+    padding: 16px !important;
+    background: var(--opc-background) !important;
+    border-top: 1px solid var(--opc-border) !important;
     font-size: 13px !important;
-    color: #555 !important;
+    color: var(--opc-text-secondary) !important;
+    line-height: 1.5 !important;
 }
 
 /* Empty Message */
 .opc-checkout-container .opc-empty-message {
     text-align: center !important;
-    color: #6c757d !important;
-    font-style: italic !important;
+    color: var(--opc-text-secondary) !important;
+    font-style: normal !important;
     padding: 20px !important;
-    background: #f8f9fa !important;
-    border-radius: 6px !important;
+    background: var(--opc-background) !important;
+    border-radius: var(--opc-button-radius) !important;
     margin: 0 !important;
+    font-size: 14px !important;
 }
 
 /* ========================================
-   RIGHT COLUMN - SUMMARY BOX
+   RIGHT COLUMN - SUMMARY BOX (Shopify Style)
    ======================================== */
 
 .opc-checkout-container .opc-col-right,
@@ -424,11 +444,11 @@
 
 .opc-checkout-container .opc-col-right .opc-summary-box,
 .opc-checkout-container .opc-summary-box {
-    background: #fff !important;
-    border: 1px solid #e9ecef !important;
+    background: var(--opc-white) !important;
+    border: 1px solid var(--opc-border) !important;
     border-radius: 8px !important;
-    padding: 24px !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+    padding: 20px !important;
+    box-shadow: none !important;
     width: 100% !important;
     box-sizing: border-box !important;
     display: block !important;
@@ -436,9 +456,9 @@
 
 /* Cart Items */
 .opc-checkout-container .opc-cart-items {
-    margin-bottom: 20px !important;
+    margin-bottom: 16px !important;
     padding-bottom: 16px !important;
-    border-bottom: 1px solid #e9ecef !important;
+    border-bottom: 1px solid var(--opc-border) !important;
     width: 100% !important;
 }
 
@@ -447,21 +467,24 @@
     flex-direction: row !important;
     align-items: center !important;
     gap: 12px !important;
-    padding: 10px 0 !important;
+    padding: 8px 0 !important;
     width: 100% !important;
 }
 
 .opc-checkout-container .opc-cart-item:not(:last-child) {
-    border-bottom: 1px solid #f1f3f5 !important;
+    border-bottom: 1px solid var(--opc-background) !important;
+    padding-bottom: 12px !important;
+    margin-bottom: 8px !important;
 }
 
 .opc-checkout-container .opc-cart-item-img {
-    width: 50px !important;
-    height: 50px !important;
+    width: 64px !important;
+    height: 64px !important;
     object-fit: cover !important;
-    border-radius: 6px !important;
-    border: 1px solid #e9ecef !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--opc-border) !important;
     flex-shrink: 0 !important;
+    background: var(--opc-background) !important;
 }
 
 .opc-checkout-container .opc-cart-item-info {
@@ -471,32 +494,32 @@
 
 .opc-checkout-container .opc-cart-item-name {
     display: block !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
     font-weight: 500 !important;
-    color: #333 !important;
+    color: var(--opc-text) !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    margin-bottom: 2px !important;
+    margin-bottom: 4px !important;
 }
 
 .opc-checkout-container .opc-cart-item-qty {
-    font-size: 12px !important;
-    color: #6c757d !important;
+    font-size: 13px !important;
+    color: var(--opc-text-secondary) !important;
 }
 
 .opc-checkout-container .opc-cart-item-price {
     font-size: 14px !important;
     font-weight: 600 !important;
-    color: #333 !important;
+    color: var(--opc-text) !important;
     flex-shrink: 0 !important;
 }
 
-/* Promo Box */
+/* Promo Box - Shopify Style */
 .opc-checkout-container .opc-promo-box {
     padding-bottom: 16px !important;
     margin-bottom: 16px !important;
-    border-bottom: 1px solid #e9ecef !important;
+    border-bottom: 1px solid var(--opc-border) !important;
     width: 100% !important;
 }
 
@@ -509,27 +532,28 @@
 
 .opc-checkout-container .opc-promo-form .opc-input {
     flex: 1 !important;
-    padding: 10px 12px !important;
-    font-size: 13px !important;
+    padding: 12px !important;
+    font-size: 14px !important;
 }
 
 .opc-checkout-container .opc-btn-promo {
-    padding: 10px 16px !important;
-    background: #333 !important;
-    border: none !important;
-    border-radius: 6px !important;
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    color: #fff !important;
+    padding: 12px 16px !important;
+    background: var(--opc-background) !important;
+    border: 1px solid var(--opc-border) !important;
+    border-radius: var(--opc-button-radius) !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: var(--opc-text) !important;
     cursor: pointer !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
-    transition: background 0.2s !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    transition: background-color 0.15s ease, border-color 0.15s ease !important;
     white-space: nowrap !important;
 }
 
 .opc-checkout-container .opc-btn-promo:hover {
-    background: #444 !important;
+    background: var(--opc-white) !important;
+    border-color: var(--opc-text) !important;
 }
 
 /* Applied Codes */
@@ -540,21 +564,21 @@
 .opc-checkout-container .opc-applied-code {
     display: flex !important;
     align-items: center !important;
-    padding: 8px 10px !important;
-    background: #e8f5e9 !important;
-    border-radius: 4px !important;
+    padding: 8px 12px !important;
+    background: rgba(0, 128, 96, 0.08) !important;
+    border-radius: var(--opc-button-radius) !important;
     margin-bottom: 6px !important;
-    font-size: 12px !important;
+    font-size: 13px !important;
 }
 
 .opc-checkout-container .opc-code-name {
     flex: 1 !important;
     font-weight: 500 !important;
-    color: #2e7d32 !important;
+    color: var(--opc-success) !important;
 }
 
 .opc-checkout-container .opc-code-value {
-    color: #2e7d32 !important;
+    color: var(--opc-success) !important;
     font-weight: 600 !important;
     margin-right: 8px !important;
 }
@@ -562,21 +586,21 @@
 .opc-checkout-container .opc-code-remove {
     background: none !important;
     border: none !important;
-    color: #999 !important;
-    font-size: 16px !important;
+    color: var(--opc-text-secondary) !important;
+    font-size: 18px !important;
     cursor: pointer !important;
     padding: 0 4px !important;
     line-height: 1 !important;
 }
 
 .opc-checkout-container .opc-code-remove:hover {
-    color: #dc3545 !important;
+    color: var(--opc-error) !important;
 }
 
-/* Summary Totals */
+/* Summary Totals - Shopify Style */
 .opc-checkout-container .opc-summary-totals {
     padding: 16px 0 !important;
-    border-bottom: 1px solid #e9ecef !important;
+    border-bottom: 1px solid var(--opc-border) !important;
     width: 100% !important;
 }
 
@@ -593,48 +617,58 @@
 .opc-checkout-container .opc-summary-line > span:first-child {
     flex: 1 1 auto !important;
     text-align: left !important;
+    color: var(--opc-text-secondary) !important;
 }
 
 .opc-checkout-container .opc-summary-line > span:last-child {
     flex: 0 0 auto !important;
     text-align: right !important;
     white-space: nowrap !important;
+    color: var(--opc-text) !important;
+    font-weight: 500 !important;
 }
 
 .opc-checkout-container .opc-line-discount span:last-child {
-    color: #dc3545 !important;
+    color: var(--opc-success) !important;
 }
 
 .opc-checkout-container .opc-line-total {
-    margin-top: 10px !important;
+    margin-top: 12px !important;
     padding-top: 12px !important;
-    border-top: 2px solid #c8e600 !important;
-    font-size: 18px !important;
-    font-weight: 700 !important;
+    border-top: 1px solid var(--opc-border) !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+}
+
+.opc-checkout-container .opc-line-total > span:first-child {
+    color: var(--opc-text) !important;
+    font-weight: 600 !important;
 }
 
 .opc-checkout-container .opc-line-total span:last-child {
-    color: #c8e600 !important;
+    color: var(--opc-text) !important;
+    font-weight: 700 !important;
+    font-size: 18px !important;
 }
 
 /* Notes Section */
 .opc-checkout-container .opc-notes-section {
     padding: 16px 0 !important;
-    border-bottom: 1px solid #e9ecef !important;
+    border-bottom: 1px solid var(--opc-border) !important;
     width: 100% !important;
 }
 
 .opc-checkout-container .opc-notes-section > label {
     display: block !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
     font-weight: 500 !important;
-    color: #555 !important;
+    color: var(--opc-text) !important;
     margin-bottom: 8px !important;
 }
 
 .opc-checkout-container .opc-notes-section .opc-textarea {
     min-height: 70px !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
 }
 
 /* Actions Section */
@@ -643,7 +677,7 @@
     width: 100% !important;
 }
 
-/* Terms Checkbox */
+/* Terms Checkbox - Shopify Style */
 .opc-checkout-container .opc-terms-box {
     margin-bottom: 16px !important;
 }
@@ -653,7 +687,7 @@
     align-items: flex-start !important;
     gap: 10px !important;
     cursor: pointer !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
     line-height: 1.4 !important;
 }
 
@@ -661,56 +695,57 @@
     flex-shrink: 0 !important;
     width: 18px !important;
     height: 18px !important;
-    margin-top: 1px !important;
-    accent-color: #c8e600 !important;
+    margin-top: 2px !important;
+    accent-color: var(--opc-primary) !important;
     cursor: pointer !important;
 }
 
 .opc-checkout-container .opc-checkbox-text {
-    color: #555 !important;
+    color: var(--opc-text-secondary) !important;
 }
 
 .opc-checkout-container .opc-checkbox-text a {
-    color: #c8e600 !important;
-    text-decoration: none !important;
+    color: var(--opc-primary) !important;
+    text-decoration: underline !important;
     font-weight: 500 !important;
 }
 
 .opc-checkout-container .opc-checkbox-text a:hover {
-    text-decoration: underline !important;
+    color: var(--opc-primary-hover) !important;
 }
 
-/* Order Button */
+/* Order Button - Shopify Style (Primary Button) */
 .opc-checkout-container .opc-btn-order {
     width: 100% !important;
-    padding: 16px 20px !important;
-    background: #c8e600 !important;
+    padding: 16px 24px !important;
+    background: var(--opc-primary) !important;
     border: none !important;
-    border-radius: 8px !important;
-    font-size: 15px !important;
-    font-weight: 700 !important;
-    color: #333 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 1px !important;
+    border-radius: var(--opc-button-radius) !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: var(--opc-white) !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
     cursor: pointer !important;
-    transition: all 0.2s !important;
+    transition: background-color 0.15s ease, transform 0.1s ease !important;
     display: block !important;
     text-align: center !important;
     text-decoration: none !important;
 }
 
 .opc-checkout-container .opc-btn-order:hover {
-    background: #b3cc00 !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 12px rgba(200, 230, 0, 0.3) !important;
+    background: var(--opc-primary-hover) !important;
+}
+
+.opc-checkout-container .opc-btn-order:active {
+    transform: scale(0.98) !important;
 }
 
 .opc-checkout-container .opc-btn-order:disabled {
-    background: #dee2e6 !important;
-    color: #6c757d !important;
+    background: var(--opc-border) !important;
+    color: var(--opc-text-secondary) !important;
     cursor: not-allowed !important;
     transform: none !important;
-    box-shadow: none !important;
 }
 
 /* Secure Note */
@@ -721,40 +756,40 @@
     gap: 6px !important;
     margin-top: 12px !important;
     font-size: 12px !important;
-    color: #6c757d !important;
+    color: var(--opc-text-secondary) !important;
 }
 
 .opc-checkout-container .opc-secure-note svg {
-    color: #28a745 !important;
+    color: var(--opc-success) !important;
 }
 
 /* ========================================
-   BUTTONS
+   BUTTONS - Shopify Style
    ======================================== */
 
 .opc-checkout-container .opc-btn {
     padding: 10px 16px !important;
     border: none !important;
-    border-radius: 6px !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
+    border-radius: var(--opc-button-radius) !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
     cursor: pointer !important;
-    transition: all 0.2s !important;
+    transition: all 0.15s ease !important;
     white-space: nowrap !important;
 }
 
 .opc-checkout-container .opc-btn-small {
-    padding: 8px 14px !important;
-    background: #c8e600 !important;
-    color: #333 !important;
+    padding: 10px 16px !important;
+    background: var(--opc-primary) !important;
+    color: var(--opc-white) !important;
 }
 
 .opc-checkout-container .opc-btn-small:hover {
-    background: #b3cc00 !important;
+    background: var(--opc-primary-hover) !important;
 }
 
 /* ========================================
-   MODALS & OVERLAYS
+   MODALS & OVERLAYS - Shopify Style
    ======================================== */
 
 /* Loading Overlay */
@@ -773,10 +808,10 @@
 }
 
 .opc-loading-spinner {
-    width: 44px !important;
-    height: 44px !important;
-    border: 3px solid #e9ecef !important;
-    border-top-color: #c8e600 !important;
+    width: 40px !important;
+    height: 40px !important;
+    border: 3px solid var(--opc-border) !important;
+    border-top-color: var(--opc-primary) !important;
     border-radius: 50% !important;
     animation: opc-spin 0.8s linear infinite !important;
 }
@@ -788,43 +823,43 @@
 .opc-loading-text {
     margin-top: 16px !important;
     font-size: 14px !important;
-    color: #555 !important;
+    color: var(--opc-text-secondary) !important;
 }
 
-/* Toast Notifications */
+/* Toast Notifications - Shopify Style */
 .opc-toast {
     position: fixed !important;
-    bottom: 30px !important;
+    bottom: 24px !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
-    background: #333 !important;
-    color: #fff !important;
-    padding: 14px 24px !important;
-    border-radius: 8px !important;
+    background: var(--opc-text) !important;
+    color: var(--opc-white) !important;
+    padding: 14px 20px !important;
+    border-radius: var(--opc-button-radius) !important;
     font-size: 14px !important;
     z-index: 10000 !important;
     display: flex !important;
     align-items: center !important;
     gap: 12px !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25) !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
     max-width: 90% !important;
 }
 
 .opc-toast.error {
-    background: #dc3545 !important;
+    background: var(--opc-error) !important;
 }
 
 .opc-toast.success {
-    background: #28a745 !important;
+    background: var(--opc-success) !important;
 }
 
 .opc-toast-close {
     background: none !important;
     border: none !important;
-    color: #fff !important;
+    color: var(--opc-white) !important;
     font-size: 20px !important;
     cursor: pointer !important;
-    opacity: 0.7 !important;
+    opacity: 0.8 !important;
     padding: 0 !important;
     line-height: 1 !important;
 }
@@ -833,26 +868,27 @@
     opacity: 1 !important;
 }
 
-/* Payment Modal */
+/* Payment Modal - Shopify Style */
 .opc-modal {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    background: rgba(0, 0, 0, 0.7) !important;
+    background: rgba(0, 0, 0, 0.5) !important;
     z-index: 10000 !important;
     display: flex !important;
     flex-direction: column !important;
 }
 
 .opc-modal-header {
-    background: #333 !important;
-    color: #fff !important;
-    padding: 16px 24px !important;
+    background: var(--opc-white) !important;
+    color: var(--opc-text) !important;
+    padding: 16px 20px !important;
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
+    border-bottom: 1px solid var(--opc-border) !important;
 }
 
 .opc-modal-header h3 {
@@ -864,7 +900,7 @@
 .opc-modal-close {
     background: none !important;
     border: none !important;
-    color: #fff !important;
+    color: var(--opc-text-secondary) !important;
     font-size: 28px !important;
     cursor: pointer !important;
     line-height: 1 !important;
@@ -872,12 +908,12 @@
 }
 
 .opc-modal-close:hover {
-    color: #c8e600 !important;
+    color: var(--opc-text) !important;
 }
 
 .opc-modal-body {
     flex: 1 !important;
-    background: #fff !important;
+    background: var(--opc-white) !important;
     overflow: auto !important;
 }
 
@@ -887,14 +923,14 @@
     border: none !important;
 }
 
-/* Success Modal */
+/* Success Modal - Shopify Style */
 .opc-success-modal {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    background: #fff !important;
+    background: var(--opc-white) !important;
     z-index: 10001 !important;
     display: flex !important;
     flex-direction: column !important;
@@ -908,21 +944,27 @@
     margin-bottom: 24px !important;
 }
 
+.opc-success-modal .opc-success-icon svg {
+    stroke: var(--opc-success) !important;
+}
+
 .opc-success-modal h2 {
-    font-size: 28px !important;
-    color: #333 !important;
+    font-size: 24px !important;
+    color: var(--opc-text) !important;
     margin: 0 0 12px 0 !important;
+    font-weight: 600 !important;
 }
 
 .opc-success-modal p {
     font-size: 16px !important;
-    color: #555 !important;
+    color: var(--opc-text-secondary) !important;
     margin: 0 0 8px 0 !important;
 }
 
 .opc-success-modal .opc-order-ref {
-    font-size: 18px !important;
+    font-size: 16px !important;
     margin-bottom: 24px !important;
+    color: var(--opc-text) !important;
 }
 
 .opc-success-modal .opc-btn-order {
@@ -936,7 +978,7 @@
 
 @media (max-width: 768px) {
     .opc-checkout-container {
-        padding: 15px !important;
+        padding: 16px !important;
     }
 
     .opc-checkout-container .opc-section {
@@ -948,16 +990,21 @@
     }
 
     .opc-checkout-container .opc-btn-order {
-        padding: 14px 16px !important;
-        font-size: 14px !important;
+        padding: 14px 20px !important;
+        font-size: 15px !important;
     }
 
     .opc-minimal-header {
-        padding: 12px 15px !important;
+        padding: 12px 16px !important;
     }
 
     .opc-header-title {
-        font-size: 14px !important;
+        font-size: 13px !important;
+    }
+
+    .opc-checkout-container .opc-cart-item-img {
+        width: 56px !important;
+        height: 56px !important;
     }
 }
 
@@ -965,28 +1012,27 @@
    LEGACY COMPATIBILITY
    ======================================== */
 
-/* For backward compatibility with old class names */
 .opc-btn-confirm {
     width: 100% !important;
-    padding: 16px !important;
+    padding: 16px 24px !important;
     margin-top: 20px !important;
-    background: #c8e600 !important;
+    background: var(--opc-primary) !important;
     border: none !important;
-    border-radius: 8px !important;
-    font-size: 15px !important;
-    font-weight: 700 !important;
-    color: #333 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 1px !important;
+    border-radius: var(--opc-button-radius) !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: var(--opc-white) !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
     cursor: pointer !important;
-    transition: background 0.2s !important;
+    transition: background-color 0.15s ease !important;
     display: block !important;
     text-align: center !important;
     text-decoration: none !important;
 }
 
 .opc-btn-confirm:hover {
-    background: #b3cc00 !important;
+    background: var(--opc-primary-hover) !important;
 }
 
 .opc-terms {
@@ -998,22 +1044,22 @@
     align-items: center !important;
     gap: 10px !important;
     cursor: pointer !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
 }
 
 .opc-terms .opc-checkbox-label input[type="checkbox"] {
-    width: 16px !important;
-    height: 16px !important;
-    accent-color: #c8e600 !important;
+    width: 18px !important;
+    height: 18px !important;
+    accent-color: var(--opc-primary) !important;
 }
 
 .opc-terms a {
-    color: #c8e600 !important;
-    text-decoration: none !important;
+    color: var(--opc-primary) !important;
+    text-decoration: underline !important;
 }
 
 .opc-terms a:hover {
-    text-decoration: underline !important;
+    color: var(--opc-primary-hover) !important;
 }
 
 /* Old overlay styles */
@@ -1032,10 +1078,10 @@
 }
 
 .opc-spinner {
-    width: 44px !important;
-    height: 44px !important;
-    border: 3px solid #e9ecef !important;
-    border-top-color: #c8e600 !important;
+    width: 40px !important;
+    height: 40px !important;
+    border: 3px solid var(--opc-border) !important;
+    border-top-color: var(--opc-primary) !important;
     border-radius: 50% !important;
     animation: opc-spin 0.8s linear infinite !important;
 }
@@ -1047,7 +1093,7 @@
     left: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    background: #fff !important;
+    background: var(--opc-white) !important;
     z-index: 10001 !important;
     display: flex !important;
     flex-direction: column !important;
@@ -1058,32 +1104,33 @@
 }
 
 .opc-order-success .opc-success-icon {
-    width: 80px !important;
-    height: 80px !important;
-    background: #c8e600 !important;
+    width: 64px !important;
+    height: 64px !important;
+    background: rgba(0, 128, 96, 0.1) !important;
     border-radius: 50% !important;
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
-    font-size: 40px !important;
-    color: #333 !important;
+    font-size: 32px !important;
+    color: var(--opc-success) !important;
     margin-bottom: 24px !important;
 }
 
 .opc-order-success h2 {
-    font-size: 28px !important;
-    color: #333 !important;
+    font-size: 24px !important;
+    color: var(--opc-text) !important;
     margin: 0 0 12px 0 !important;
+    font-weight: 600 !important;
 }
 
 .opc-order-success p {
     font-size: 16px !important;
-    color: #555 !important;
+    color: var(--opc-text-secondary) !important;
     margin: 0 0 8px 0 !important;
 }
 
 .opc-order-ref {
-    font-size: 18px !important;
+    font-size: 16px !important;
     margin-bottom: 24px !important;
 }
 
@@ -1094,50 +1141,52 @@
     left: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    background: rgba(0, 0, 0, 0.7) !important;
+    background: rgba(0, 0, 0, 0.5) !important;
     z-index: 10000 !important;
     display: flex !important;
     flex-direction: column !important;
 }
 
 .opc-payment-frame-header {
-    background: #333 !important;
-    color: #fff !important;
-    padding: 16px 24px !important;
+    background: var(--opc-white) !important;
+    color: var(--opc-text) !important;
+    padding: 16px 20px !important;
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
+    border-bottom: 1px solid var(--opc-border) !important;
 }
 
 .opc-payment-frame-header h3 {
     margin: 0 !important;
     font-size: 16px !important;
+    font-weight: 600 !important;
 }
 
 .opc-payment-frame-close {
     background: none !important;
     border: none !important;
-    color: #fff !important;
+    color: var(--opc-text-secondary) !important;
     font-size: 28px !important;
     cursor: pointer !important;
     line-height: 1 !important;
 }
 
 .opc-payment-frame-close:hover {
-    color: #c8e600 !important;
+    color: var(--opc-text) !important;
 }
 
 .opc-payment-frame-content {
     flex: 1 !important;
-    background: #fff !important;
+    background: var(--opc-white) !important;
     overflow: auto !important;
 }
 
 /* Payment info */
 .opc-payment-info {
-    padding: 14px 16px !important;
-    background: #f8f9fa !important;
-    border-top: 1px solid #e9ecef !important;
-    font-size: 13px !important;
-    color: #555 !important;
+    padding: 16px !important;
+    background: var(--opc-background) !important;
+    border-top: 1px solid var(--opc-border) !important;
+    font-size: 14px !important;
+    color: var(--opc-text-secondary) !important;
 }

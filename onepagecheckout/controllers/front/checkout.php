@@ -230,6 +230,9 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
         $terms_cms_id = (int)Configuration::get('PS_CONDITIONS_CMS_ID');
         $termsLink = $terms_cms_id ? $this->context->link->getCMSLink($terms_cms_id) : '';
 
+        // Get color configuration from module
+        $color_config = $this->module->getColorConfig();
+
         $this->context->smarty->assign([
             'is_logged' => $is_logged,
             'customer_data' => $customer_data,
@@ -250,6 +253,7 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
             'checkout_session' => $this->checkout_session,
             'show_terms' => $show_terms,
             'termsLink' => $termsLink,
+            'opc_colors' => $color_config,
         ]);
 
         $this->setTemplate('module:onepagecheckout/views/templates/front/checkout.tpl');
