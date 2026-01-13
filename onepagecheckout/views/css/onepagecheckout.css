@@ -728,7 +728,7 @@
     width: 100% !important;
     height: 100% !important;
     background: rgba(255, 255, 255, 0.95) !important;
-    display: flex !important;
+    /* display is controlled via inline style - don't set here */
     flex-direction: column !important;
     justify-content: center !important;
     align-items: center !important;
@@ -766,7 +766,7 @@
     border-radius: 8px !important;
     font-size: 14px !important;
     z-index: 10000 !important;
-    display: flex !important;
+    /* display is controlled via inline style - don't set here */
     align-items: center !important;
     gap: 12px !important;
     box-shadow: 0 4px 20px rgba(0,0,0,0.25) !important;
@@ -805,7 +805,7 @@
     height: 100% !important;
     background: rgba(0, 0, 0, 0.7) !important;
     z-index: 10000 !important;
-    display: flex !important;
+    /* display is controlled via inline style - don't set here */
     flex-direction: column !important;
 }
 
@@ -859,7 +859,7 @@
     height: 100% !important;
     background: #fff !important;
     z-index: 10001 !important;
-    display: flex !important;
+    /* display is controlled via inline style - don't set here */
     flex-direction: column !important;
     justify-content: center !important;
     align-items: center !important;
@@ -987,7 +987,7 @@
     width: 100% !important;
     height: 100% !important;
     background: rgba(255, 255, 255, 0.95) !important;
-    display: flex !important;
+    /* display is controlled via inline style - don't set here */
     flex-direction: column !important;
     justify-content: center !important;
     align-items: center !important;
@@ -1012,7 +1012,7 @@
     height: 100% !important;
     background: #fff !important;
     z-index: 10001 !important;
-    display: flex !important;
+    /* display is controlled via inline style - don't set here */
     flex-direction: column !important;
     justify-content: center !important;
     align-items: center !important;
