@@ -51,7 +51,7 @@ class OpcCheckoutSession
     }
 
     /**
-     * Get delivery address - required by some payment modules
+     * Get delivery address - required by PayPal and other payment modules
      */
     public function getDeliveryAddress()
     {
@@ -59,6 +59,14 @@ class OpcCheckoutSession
             return new Address((int)$this->cart->id_address_delivery);
         }
         return null;
+    }
+
+    /**
+     * Alias for PayPal compatibility
+     */
+    public function getShippingAddress()
+    {
+        return $this->getDeliveryAddress();
     }
 
     /**
@@ -74,6 +82,14 @@ class OpcCheckoutSession
     }
 
     /**
+     * Alias for billing address (PayPal compatibility)
+     */
+    public function getBillingAddress()
+    {
+        return $this->getInvoiceAddress();
+    }
+
+    /**
      * Check if address is complete - for payment module validation
      */
     public function isAddressComplete()
@@ -86,12 +102,71 @@ class OpcCheckoutSession
     }
 
     /**
+     * Get order total - used by PayPal and Nexi
+     */
+    public function getOrderTotal($with_taxes = true, $type = Cart::BOTH)
+    {
+        return $this->cart->getOrderTotal($with_taxes, $type);
+    }
+
+    /**
+     * Check if customer is logged - PayPal compatibility
+     */
+    public function isLogged()
+    {
+        return $this->customer->isLogged() || $this->customer->id > 0;
+    }
+
+    /**
+     * Get id_lang - compatibility with payment modules
+     */
+    public function getIdLang()
+    {
+        return (int)$this->language->id;
+    }
+
+    /**
+     * Get id_currency - compatibility with payment modules
+     */
+    public function getIdCurrency()
+    {
+        return (int)$this->currency->id;
+    }
+
+    /**
      * Magic getter for direct property access
      */
     public function __get($name)
     {
+        // Handle common property name mappings
+        $mappings = [
+            'id_cart' => $this->cart->id,
+            'id_customer' => $this->customer->id,
+            'id_lang' => $this->language->id,
+            'id_currency' => $this->currency->id,
+            'id_address_delivery' => $this->cart->id_address_delivery,
+            'id_address_invoice' => $this->cart->id_address_invoice,
+            'id_carrier' => $this->cart->id_carrier,
+        ];
+
+        if (isset($mappings[$name])) {
+            return $mappings[$name];
+        }
+
         if (property_exists($this, $name)) {
             return $this->$name;
+        }
+        return null;
+    }
+
+    /**
+     * Magic method caller for compatibility
+     */
+    public function __call($name, $arguments)
+    {
+        // Try to call method on cart if it exists
+        if (method_exists($this->cart, $name)) {
+            return call_user_func_array([$this->cart, $name], $arguments);
         }
         return null;
     }
@@ -524,7 +599,112 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
             $payment_options = $this->getOfflinePaymentModules($payment_modules);
         }
 
+        // Additional fallback: Add known online payment modules that might not return options without address
+        $payment_options = $this->addOnlinePaymentFallbacks($payment_modules, $payment_options);
+
         return $payment_options;
+    }
+
+    /**
+     * Add fallback entries for known online payment modules
+     * These modules often require a complete address to return options,
+     * but we want to show them to the user anyway
+     */
+    protected function addOnlinePaymentFallbacks($payment_modules, $existing_options)
+    {
+        // Get list of already added modules
+        $added_modules = [];
+        foreach ($existing_options as $option) {
+            $added_modules[] = $option['module_name'];
+        }
+
+        // Known online payment modules with their display names
+        $online_modules = [
+            'paypal' => [
+                'name' => 'PayPal',
+                'info' => 'Paga in modo sicuro con PayPal',
+            ],
+            'ps_checkout' => [
+                'name' => 'PayPal Checkout',
+                'info' => 'Paga con PayPal, carta di credito o debito',
+            ],
+            'stripe' => [
+                'name' => 'Carta di Credito (Stripe)',
+                'info' => 'Paga in modo sicuro con carta di credito o debito',
+            ],
+            'stripe_official' => [
+                'name' => 'Stripe',
+                'info' => 'Paga con carta di credito, Apple Pay o Google Pay',
+            ],
+            'nexi' => [
+                'name' => 'Nexi',
+                'info' => 'Paga con carta di credito tramite Nexi',
+            ],
+            'nexixpay' => [
+                'name' => 'Nexi XPay',
+                'info' => 'Paga con carta di credito tramite Nexi XPay',
+            ],
+            'axepta' => [
+                'name' => 'Axepta (BNL)',
+                'info' => 'Paga con carta di credito tramite Axepta',
+            ],
+            'satispay' => [
+                'name' => 'Satispay',
+                'info' => 'Paga con Satispay',
+            ],
+            'scalapay' => [
+                'name' => 'Scalapay',
+                'info' => 'Paga in 3 rate senza interessi',
+            ],
+            'klarna' => [
+                'name' => 'Klarna',
+                'info' => 'Paga in 3 rate o dopo 30 giorni',
+            ],
+        ];
+
+        foreach ($payment_modules as $module_info) {
+            $module_name = $module_info['name'];
+
+            // Skip if already added
+            if (in_array($module_name, $added_modules)) {
+                continue;
+            }
+
+            // Check if it's a known online module
+            if (isset($online_modules[$module_name])) {
+                $module = Module::getInstanceByName($module_name);
+                if ($module && $module->active) {
+                    // Check if module is available for current context
+                    if ($this->isPaymentModuleAvailable($module)) {
+                        $logo_path = _PS_MODULE_DIR_ . $module_name . '/logo.png';
+                        $logo = file_exists($logo_path)
+                            ? _MODULE_DIR_ . $module_name . '/logo.png'
+                            : '';
+
+                        // Also check for views/img/logo.png
+                        if (!$logo) {
+                            $logo_path_alt = _PS_MODULE_DIR_ . $module_name . '/views/img/logo.png';
+                            if (file_exists($logo_path_alt)) {
+                                $logo = _MODULE_DIR_ . $module_name . '/views/img/logo.png';
+                            }
+                        }
+
+                        $existing_options[] = [
+                            'module_name' => $module_name,
+                            'call_to_action_text' => $online_modules[$module_name]['name'],
+                            'logo' => $logo,
+                            'action' => $this->context->link->getModuleLink($module_name, 'payment'),
+                            'form' => null,
+                            'additional_information' => '<p>' . $online_modules[$module_name]['info'] . '</p>',
+                            'binary' => false,
+                            'is_online' => true,
+                        ];
+                    }
+                }
+            }
+        }
+
+        return $existing_options;
     }
 
     /**

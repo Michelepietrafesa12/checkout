@@ -546,8 +546,11 @@
             } else if (response.order_created) {
                 // Fallback to inline success if no confirmation URL
                 showOrderSuccess(response.order_reference);
+            } else if (response.use_redirect && response.payment_url) {
+                // PayPal, Nexi, Stripe - always redirect (they block iframes)
+                window.location.href = response.payment_url;
             } else if (response.use_iframe && response.payment_url) {
-                // Online payment - open in iframe
+                // Other online payments - try iframe first
                 openPaymentFrame(response.payment_url);
             } else if (response.payment_url) {
                 // Fallback - redirect to payment page

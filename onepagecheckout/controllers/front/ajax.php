@@ -60,6 +60,11 @@ if (!class_exists('OpcCheckoutSession')) {
             return null;
         }
 
+        public function getShippingAddress()
+        {
+            return $this->getDeliveryAddress();
+        }
+
         public function getInvoiceAddress()
         {
             $id_address = $this->cart->id_address_invoice ?: $this->cart->id_address_delivery;
@@ -67,6 +72,11 @@ if (!class_exists('OpcCheckoutSession')) {
                 return new Address((int)$id_address);
             }
             return null;
+        }
+
+        public function getBillingAddress()
+        {
+            return $this->getInvoiceAddress();
         }
 
         public function isAddressComplete()
@@ -78,10 +88,52 @@ if (!class_exists('OpcCheckoutSession')) {
             return Validate::isLoadedObject($address);
         }
 
+        public function getOrderTotal($with_taxes = true, $type = Cart::BOTH)
+        {
+            return $this->cart->getOrderTotal($with_taxes, $type);
+        }
+
+        public function isLogged()
+        {
+            return $this->customer->isLogged() || $this->customer->id > 0;
+        }
+
+        public function getIdLang()
+        {
+            return (int)$this->language->id;
+        }
+
+        public function getIdCurrency()
+        {
+            return (int)$this->currency->id;
+        }
+
         public function __get($name)
         {
+            $mappings = [
+                'id_cart' => $this->cart->id,
+                'id_customer' => $this->customer->id,
+                'id_lang' => $this->language->id,
+                'id_currency' => $this->currency->id,
+                'id_address_delivery' => $this->cart->id_address_delivery,
+                'id_address_invoice' => $this->cart->id_address_invoice,
+                'id_carrier' => $this->cart->id_carrier,
+            ];
+
+            if (isset($mappings[$name])) {
+                return $mappings[$name];
+            }
+
             if (property_exists($this, $name)) {
                 return $this->$name;
+            }
+            return null;
+        }
+
+        public function __call($name, $arguments)
+        {
+            if (method_exists($this->cart, $name)) {
+                return call_user_func_array([$this->cart, $name], $arguments);
             }
             return null;
         }
@@ -1040,15 +1092,54 @@ class OnePageCheckoutAjaxModuleFrontController extends ModuleFrontController
             }
         }
 
-        // For online payment methods, return payment URL for iframe/redirect
+        // For online payment methods, return payment URL for redirect
+        // PayPal, Nexi, Stripe and most payment gateways don't allow iframe embedding
         $payment_url = $this->context->link->getModuleLink($payment_module, 'payment', [], true);
+
+        // Modules that block iframe embedding (X-Frame-Options) - use redirect
+        $redirect_only_modules = [
+            'paypal',
+            'ps_checkout',        // PayPal official PS module
+            'paypalplus',
+            'paypalusa',
+            'paypalapi',
+            'nexi',
+            'nexixpay',
+            'axepta',             // BNL/Nexi
+            'stripe',
+            'stripe_official',
+            'stripepro',
+            'satispay',
+            'scalapay',
+            'klarna',
+            'amazon_pay',
+            'apple_pay',
+            'google_pay',
+            'braintree',
+            'adyen',
+            'worldline',
+            'sella',
+            'gestpay',
+            'unicredit',
+            'intesasanpaolo',
+        ];
+
+        // Check if module requires redirect (no iframe)
+        $use_redirect = false;
+        foreach ($redirect_only_modules as $redirect_module) {
+            if (stripos($payment_module, $redirect_module) !== false) {
+                $use_redirect = true;
+                break;
+            }
+        }
 
         $this->json_response = [
             'success' => true,
             'order_created' => false,
             'payment_url' => $payment_url,
             'payment_module' => $payment_module,
-            'use_iframe' => true, // Suggest using iframe for online payments
+            'use_iframe' => !$use_redirect, // Only use iframe for modules that support it
+            'use_redirect' => $use_redirect, // Flag to force redirect
         ];
     }
 
