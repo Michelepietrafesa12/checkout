@@ -299,6 +299,24 @@
     color: var(--opc-error) !important;
 }
 
+/* Field Error State - Highlighted when validation fails */
+.opc-checkout-container .opc-field-error,
+.opc-checkout-container input.opc-field-error,
+.opc-checkout-container select.opc-field-error,
+.opc-checkout-container textarea.opc-field-error {
+    border-color: var(--opc-error) !important;
+    box-shadow: 0 0 0 2px rgba(215, 44, 13, 0.15) !important;
+    background-color: #fff8f7 !important;
+}
+
+.opc-checkout-container .opc-field-error:focus,
+.opc-checkout-container input.opc-field-error:focus,
+.opc-checkout-container select.opc-field-error:focus,
+.opc-checkout-container textarea.opc-field-error:focus {
+    border-color: var(--opc-error) !important;
+    box-shadow: 0 0 0 3px rgba(215, 44, 13, 0.25) !important;
+}
+
 .opc-checkout-container .opc-field-hint a {
     color: var(--opc-primary) !important;
     font-weight: 500 !important;

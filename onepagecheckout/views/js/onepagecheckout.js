@@ -245,17 +245,27 @@
             vat_number: getValue('#vat_number')
         };
 
-        // Only save if we have minimum data
+        // CRITICAL: Do NOT proceed without minimum customer data
         if (!customerData.firstname || !customerData.lastname) {
-            if (callback) callback();
+            console.error('OPC: Missing customer data - firstname or lastname');
+            if (callback) callback(false);  // Return false to indicate failure
+            return;
+        }
+
+        // Email is required for guest checkout
+        var emailField = document.getElementById('email');
+        if (emailField && !customerData.email) {
+            console.error('OPC: Missing email');
+            if (callback) callback(false);
             return;
         }
 
         ajax('saveCustomerInfo', customerData, function(response) {
             if (response.success) {
                 saveAddress(callback);
-            } else if (callback) {
-                callback();
+            } else {
+                console.error('OPC: saveCustomerInfo failed', response);
+                if (callback) callback(false);
             }
         });
     }
@@ -275,9 +285,10 @@
             address_type: 'both'
         };
 
-        // Only save if we have minimum address data
+        // CRITICAL: Do NOT proceed without minimum address data
         if (!addressData.address1 || !addressData.postcode || !addressData.city) {
-            if (callback) callback();
+            console.error('OPC: Missing address data - address1, postcode, or city');
+            if (callback) callback(false);  // Return false to indicate failure
             return;
         }
 
@@ -285,8 +296,11 @@
             if (response.success) {
                 updateCarriers(response.carriers);
                 updateTotals(response.cart_summary);
+                if (callback) callback(true);  // Success
+            } else {
+                console.error('OPC: saveAddress failed', response);
+                if (callback) callback(false);  // Failure
             }
-            if (callback) callback();
         });
     }
 
@@ -474,19 +488,83 @@
     function handleSubmit() {
         if (OPC.isProcessing) return;
 
-        // Validate form
+        // Validate form BEFORE anything else
         var errors = validateForm();
         if (errors.length > 0) {
             showToast(errors[0], 'error');
+            highlightErrors(errors);
+            return;
+        }
+
+        // Double-check critical fields exist before proceeding
+        var firstname = getValue('#firstname');
+        var lastname = getValue('#lastname');
+        var address1 = getValue('#address1');
+        var postcode = getValue('#postcode');
+        var city = getValue('#city');
+
+        if (!firstname || !lastname || !address1 || !postcode || !city) {
+            showToast('Compila tutti i campi obbligatori', 'error');
+            return;
+        }
+
+        // Check carrier is selected
+        if (!document.querySelector('input[name="id_carrier"]:checked')) {
+            showToast('Seleziona un metodo di spedizione', 'error');
+            return;
+        }
+
+        // Check payment is selected
+        if (!document.querySelector('input[name="payment_module"]:checked')) {
+            showToast('Seleziona un metodo di pagamento', 'error');
             return;
         }
 
         OPC.isProcessing = true;
         showLoading();
 
-        // Save all data first
-        saveAllData(function() {
+        // Save all data first, then create order
+        saveAllData(function(saveSuccess) {
+            if (saveSuccess === false) {
+                hideLoading();
+                OPC.isProcessing = false;
+                showToast('Errore nel salvataggio dei dati', 'error');
+                return;
+            }
             createOrder();
+        });
+    }
+
+    // Highlight error fields
+    function highlightErrors(errors) {
+        // Remove previous error highlights
+        document.querySelectorAll('.opc-field-error').forEach(function(el) {
+            el.classList.remove('opc-field-error');
+        });
+
+        // Map error messages to field selectors
+        var fieldMap = {
+            'nome': '#firstname',
+            'cognome': '#lastname',
+            'email': '#email',
+            'indirizzo': '#address1',
+            'CAP': '#postcode',
+            'città': '#city'
+        };
+
+        errors.forEach(function(error) {
+            for (var key in fieldMap) {
+                if (error.toLowerCase().indexOf(key.toLowerCase()) !== -1) {
+                    var field = document.querySelector(fieldMap[key]);
+                    if (field) {
+                        field.classList.add('opc-field-error');
+                        // Scroll to first error
+                        if (errors.indexOf(error) === 0) {
+                            field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                }
+            }
         });
     }
 

@@ -982,7 +982,8 @@ class OnePageCheckoutAjaxModuleFrontController extends ModuleFrontController
 
     /**
      * Create order for inline payment processing
-     * This creates the order first, then allows payment to complete
+     * For offline payments: creates order and returns confirmation URL
+     * For online payments: validates and returns payment URL (NO order creation)
      */
     protected function createOrder()
     {
@@ -990,31 +991,84 @@ class OnePageCheckoutAjaxModuleFrontController extends ModuleFrontController
         $customer = $this->context->customer;
         $payment_module = Tools::getValue('payment_module');
 
-        // Validate everything first
+        // ==========================================
+        // COMPREHENSIVE SERVER-SIDE VALIDATION
+        // ==========================================
+
+        // 1. Validate cart
         if (!$cart->id || !$cart->nbProducts()) {
             $this->json_response = ['success' => false, 'error' => $this->trans('Il carrello è vuoto', [], 'Modules.Onepagecheckout.Shop')];
             return;
         }
 
+        // 2. Validate customer exists AND has required data
         if (!$customer->id) {
             $this->json_response = ['success' => false, 'error' => $this->trans('Devi inserire i tuoi dati', [], 'Modules.Onepagecheckout.Shop')];
             return;
         }
 
+        // Check customer has firstname and lastname
+        if (empty($customer->firstname) || empty($customer->lastname)) {
+            $this->json_response = ['success' => false, 'error' => $this->trans('Nome e cognome sono obbligatori', [], 'Modules.Onepagecheckout.Shop')];
+            return;
+        }
+
+        // Check customer has valid email
+        if (empty($customer->email) || !Validate::isEmail($customer->email)) {
+            $this->json_response = ['success' => false, 'error' => $this->trans('Email non valida', [], 'Modules.Onepagecheckout.Shop')];
+            return;
+        }
+
+        // 3. Validate address exists
         if (!$cart->id_address_delivery) {
             $this->json_response = ['success' => false, 'error' => $this->trans('Indirizzo non valido', [], 'Modules.Onepagecheckout.Shop')];
             return;
         }
 
+        // 4. Validate address is COMPLETE (not just exists)
+        $address = new Address((int)$cart->id_address_delivery);
+        if (!Validate::isLoadedObject($address)) {
+            $this->json_response = ['success' => false, 'error' => $this->trans('Indirizzo non trovato', [], 'Modules.Onepagecheckout.Shop')];
+            return;
+        }
+
+        // Check address has all required fields
+        $address_errors = [];
+        if (empty($address->address1)) {
+            $address_errors[] = $this->trans('Indirizzo', [], 'Modules.Onepagecheckout.Shop');
+        }
+        if (empty($address->postcode)) {
+            $address_errors[] = $this->trans('CAP', [], 'Modules.Onepagecheckout.Shop');
+        }
+        if (empty($address->city)) {
+            $address_errors[] = $this->trans('Città', [], 'Modules.Onepagecheckout.Shop');
+        }
+        if (!$address->id_country) {
+            $address_errors[] = $this->trans('Paese', [], 'Modules.Onepagecheckout.Shop');
+        }
+
+        if (!empty($address_errors)) {
+            $this->json_response = [
+                'success' => false,
+                'error' => $this->trans('Campi obbligatori mancanti: ', [], 'Modules.Onepagecheckout.Shop') . implode(', ', $address_errors)
+            ];
+            return;
+        }
+
+        // 5. Validate carrier
         if (!$cart->id_carrier) {
             $this->json_response = ['success' => false, 'error' => $this->trans('Seleziona la spedizione', [], 'Modules.Onepagecheckout.Shop')];
             return;
         }
 
+        // 6. Validate payment module
         if (empty($payment_module)) {
             $this->json_response = ['success' => false, 'error' => $this->trans('Seleziona il pagamento', [], 'Modules.Onepagecheckout.Shop')];
             return;
         }
+
+        // Sanitize payment module name
+        $payment_module = pSQL(trim($payment_module));
 
         // Get payment module
         $module = Module::getInstanceByName($payment_module);
@@ -1023,22 +1077,28 @@ class OnePageCheckoutAjaxModuleFrontController extends ModuleFrontController
             return;
         }
 
-        // Store order message
+        // Store order message in cart (will be used when order is created)
         $order_message = Tools::getValue('order_message', '');
         if (!empty($order_message)) {
-            $message = new Message();
-            $message->id_cart = (int)$cart->id;
-            $message->id_customer = (int)$customer->id;
-            $message->message = pSQL($order_message);
-            $message->private = false;
-            $message->add();
+            // Check if message already exists for this cart
+            $existing_message = Message::getMessageByCartId((int)$cart->id);
+            if (!$existing_message) {
+                $message = new Message();
+                $message->id_cart = (int)$cart->id;
+                $message->id_customer = (int)$customer->id;
+                $message->message = pSQL($order_message);
+                $message->private = false;
+                $message->add();
+            }
         }
 
-        // For offline payment methods (wire transfer, check, COD), we can create the order directly
+        // ONLY these 3 modules create orders directly (offline payments)
+        // ALL other modules redirect to their payment page (online payments)
         $offline_modules = ['ps_wirepayment', 'ps_checkpayment', 'ps_cashondelivery'];
+        $is_offline_payment = in_array($payment_module, $offline_modules, true);
 
-        if (in_array($payment_module, $offline_modules)) {
-            // Create order with awaiting payment status
+        // OFFLINE PAYMENTS: Create order directly and redirect to confirmation
+        if ($is_offline_payment) {
             try {
                 $total = (float)$cart->getOrderTotal(true, Cart::BOTH);
                 $currency = $this->context->currency;
@@ -1084,6 +1144,7 @@ class OnePageCheckoutAjaxModuleFrontController extends ModuleFrontController
                 ];
                 return;
             } catch (Exception $e) {
+                PrestaShopLogger::addLog('OPC createOrder error: ' . $e->getMessage(), 3, null, 'Cart', (int)$cart->id);
                 $this->json_response = [
                     'success' => false,
                     'error' => $this->trans('Errore nella creazione dell\'ordine', [], 'Modules.Onepagecheckout.Shop') . ': ' . $e->getMessage(),
@@ -1092,54 +1153,39 @@ class OnePageCheckoutAjaxModuleFrontController extends ModuleFrontController
             }
         }
 
-        // For online payment methods, return payment URL for redirect
-        // PayPal, Nexi, Stripe and most payment gateways don't allow iframe embedding
+        // ONLINE PAYMENTS: Redirect to payment module (order created by payment module)
+        // Try different payment controller URLs
+        $payment_url = '';
+
+        // First try: module's payment controller
         $payment_url = $this->context->link->getModuleLink($payment_module, 'payment', [], true);
 
-        // Modules that block iframe embedding (X-Frame-Options) - use redirect
-        $redirect_only_modules = [
-            'paypal',
-            'ps_checkout',        // PayPal official PS module
-            'paypalplus',
-            'paypalusa',
-            'paypalapi',
-            'nexi',
-            'nexixpay',
-            'axepta',             // BNL/Nexi
-            'stripe',
-            'stripe_official',
-            'stripepro',
-            'satispay',
-            'scalapay',
-            'klarna',
-            'amazon_pay',
-            'apple_pay',
-            'google_pay',
-            'braintree',
-            'adyen',
-            'worldline',
-            'sella',
-            'gestpay',
-            'unicredit',
-            'intesasanpaolo',
-        ];
-
-        // Check if module requires redirect (no iframe)
-        $use_redirect = false;
-        foreach ($redirect_only_modules as $redirect_module) {
-            if (stripos($payment_module, $redirect_module) !== false) {
-                $use_redirect = true;
-                break;
-            }
+        // If URL looks invalid (just domain), try validation controller
+        if (empty(parse_url($payment_url, PHP_URL_PATH)) || parse_url($payment_url, PHP_URL_PATH) === '/') {
+            $payment_url = $this->context->link->getModuleLink($payment_module, 'validation', [], true);
         }
 
+        // Final fallback: redirect to standard checkout order payment step
+        if (empty(parse_url($payment_url, PHP_URL_PATH)) || parse_url($payment_url, PHP_URL_PATH) === '/') {
+            $payment_url = $this->context->link->getPageLink('order', true, null, ['step' => 'payment']);
+        }
+
+        // Log for debugging
+        PrestaShopLogger::addLog(
+            'OPC: Redirecting to payment URL for module ' . $payment_module . ': ' . $payment_url,
+            1,
+            null,
+            'Cart',
+            (int)$cart->id
+        );
+
+        // Return redirect response - NEVER order_created for online payments
         $this->json_response = [
             'success' => true,
-            'order_created' => false,
+            'order_created' => false,      // IMPORTANT: Always false for online payments
+            'redirect_to_payment' => true, // Explicit flag
             'payment_url' => $payment_url,
             'payment_module' => $payment_module,
-            'use_iframe' => !$use_redirect, // Only use iframe for modules that support it
-            'use_redirect' => $use_redirect, // Flag to force redirect
         ];
     }
 
