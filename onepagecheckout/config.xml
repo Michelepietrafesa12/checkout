@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+    <name>onepagecheckout</name>
+    <displayName><![CDATA[One Page Checkout]]></displayName>
+    <version><![CDATA[1.0.0]]></version>
+    <description><![CDATA[Checkout completo in una sola pagina per PrestaShop 1.7. Include gestione clienti, indirizzi, spedizione e pagamento in un'unica pagina.]]></description>
+    <author><![CDATA[Developer]]></author>
+    <tab><![CDATA[checkout]]></tab>
+    <is_configurable>1</is_configurable>
+    <need_instance>0</need_instance>
+    <limited_countries></limited_countries>
+</module>

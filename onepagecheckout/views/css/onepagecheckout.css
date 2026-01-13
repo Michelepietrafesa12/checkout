@@ -1,0 +1,766 @@
+/**
+ * One Page Checkout Styles
+ * Clean, modern checkout design
+ */
+
+/* Reset and Base */
+.opc-checkout-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+.opc-checkout-container * {
+    box-sizing: border-box;
+}
+
+/* Title */
+.opc-title {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 30px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Layout */
+.opc-row {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.opc-col-left {
+    flex: 1;
+    min-width: 500px;
+}
+
+.opc-col-right {
+    flex: 0 0 450px;
+}
+
+@media (max-width: 1024px) {
+    .opc-col-left,
+    .opc-col-right {
+        flex: 1 1 100%;
+        min-width: 100%;
+    }
+}
+
+/* Sections */
+.opc-section {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 20px;
+}
+
+.opc-section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #c8e600;
+}
+
+.opc-subsection-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #555;
+    margin: 0 0 15px 0;
+}
+
+/* Forms */
+.opc-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.opc-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.opc-form-group label {
+    font-size: 12px;
+    color: #666;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.opc-form-group .required {
+    color: #e74c3c;
+}
+
+.opc-optional {
+    font-size: 11px;
+    font-weight: 400;
+    color: #999;
+    text-transform: none;
+    display: block;
+}
+
+.opc-form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.opc-form-group-half {
+    flex: 1;
+}
+
+/* Inputs */
+.opc-input,
+.opc-select,
+.opc-textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #333;
+    background: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.opc-input:focus,
+.opc-select:focus,
+.opc-textarea:focus {
+    outline: none;
+    border-color: #c8e600;
+    box-shadow: 0 0 0 3px rgba(200, 230, 0, 0.2);
+}
+
+.opc-input.error,
+.opc-select.error {
+    border-color: #e74c3c;
+}
+
+.opc-textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Select */
+.opc-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    padding-right: 40px;
+}
+
+/* Birthday Selects */
+.opc-birthday-group label {
+    margin-bottom: 10px;
+}
+
+.opc-birthday-selects {
+    display: flex;
+    gap: 10px;
+}
+
+.opc-select-day {
+    flex: 0 0 100px;
+}
+
+.opc-select-month {
+    flex: 1;
+}
+
+.opc-select-year {
+    flex: 0 0 120px;
+}
+
+/* Checkboxes */
+.opc-checkbox-group {
+    flex-direction: row !important;
+    align-items: center;
+}
+
+.opc-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+}
+
+.opc-checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #c8e600;
+}
+
+/* Radio Buttons */
+.opc-radio-label {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.opc-radio-label:hover {
+    border-color: #c8e600;
+    background: #fafff0;
+}
+
+.opc-radio-label input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #c8e600;
+}
+
+.opc-radio-label input[type="radio"]:checked + .opc-carrier-info,
+.opc-radio-label input[type="radio"]:checked + .opc-payment-info {
+    font-weight: 500;
+}
+
+/* Carriers */
+.opc-carriers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.opc-carrier-option,
+.opc-payment-option {
+    margin-bottom: 5px;
+}
+
+.opc-carrier-info,
+.opc-payment-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.opc-carrier-logo,
+.opc-payment-logo {
+    max-width: 60px;
+    max-height: 30px;
+    object-fit: contain;
+}
+
+.opc-carrier-name,
+.opc-payment-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.opc-carrier-delay {
+    font-size: 12px;
+    color: #666;
+}
+
+.opc-carrier-price {
+    font-weight: 600;
+    color: #c8e600;
+    font-size: 16px;
+}
+
+.opc-no-carriers,
+.opc-no-payments {
+    color: #666;
+    font-style: italic;
+    padding: 20px;
+    text-align: center;
+    background: #f9f9f9;
+    border-radius: 6px;
+}
+
+/* Payment Extra Info */
+.opc-payment-info-extra,
+.opc-payment-form {
+    padding: 15px;
+    margin-top: 10px;
+    background: #f9f9f9;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #666;
+}
+
+/* Buttons */
+.opc-btn {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.opc-btn:hover {
+    transform: translateY(-1px);
+}
+
+.opc-btn:active {
+    transform: translateY(0);
+}
+
+.opc-btn-primary {
+    background: #c8e600;
+    color: #333;
+}
+
+.opc-btn-primary:hover {
+    background: #b3cc00;
+}
+
+.opc-btn-link {
+    background: transparent;
+    color: #c8e600;
+    padding: 5px 10px;
+    text-decoration: underline;
+}
+
+.opc-btn-link:hover {
+    color: #a5bf00;
+}
+
+/* Order Summary */
+.opc-order-summary {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 25px;
+    position: sticky;
+    top: 20px;
+}
+
+/* Discount Section */
+.opc-discount-section {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.opc-discount-form {
+    display: flex;
+    gap: 10px;
+}
+
+.opc-discount-form .opc-input {
+    flex: 1;
+}
+
+.opc-btn-discount {
+    background: #c8e600;
+    color: #333;
+    padding: 12px 20px;
+    white-space: nowrap;
+}
+
+.opc-btn-discount:hover {
+    background: #b3cc00;
+}
+
+/* Products Table */
+.opc-products-section {
+    margin-bottom: 20px;
+}
+
+.opc-products-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.opc-products-table th {
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    text-transform: lowercase;
+    padding: 10px 0;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.opc-col-price {
+    text-align: right;
+    width: 100px;
+}
+
+.opc-product-row {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.opc-product-row td {
+    padding: 15px 0;
+    vertical-align: top;
+}
+
+.opc-product-item {
+    display: flex;
+    gap: 15px;
+}
+
+.opc-product-image {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #e5e5e5;
+}
+
+.opc-product-details {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.opc-product-qty {
+    font-size: 13px;
+    color: #333;
+}
+
+.opc-product-original-price {
+    font-size: 12px;
+    color: #e74c3c;
+    text-decoration: line-through;
+}
+
+.opc-product-current-price {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.opc-product-name {
+    font-size: 13px;
+    color: #333;
+    font-weight: 500;
+}
+
+.opc-product-ref,
+.opc-product-date {
+    font-size: 11px;
+    color: #999;
+}
+
+.opc-product-stock {
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.opc-product-stock.opc-available {
+    color: #27ae60;
+}
+
+.opc-product-stock.opc-available::before {
+    content: '● ';
+}
+
+.opc-col-price {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Totals */
+.opc-totals-section {
+    padding: 20px 0;
+    border-top: 1px solid #e5e5e5;
+}
+
+.opc-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.opc-total-label {
+    font-size: 14px;
+    color: #666;
+}
+
+.opc-total-value {
+    font-size: 14px;
+    color: #333;
+}
+
+.opc-original-price {
+    font-size: 12px;
+    color: #e74c3c;
+    text-decoration: line-through;
+    margin-right: 10px;
+}
+
+.opc-discount-row .opc-total-value {
+    color: #e74c3c;
+}
+
+.opc-grand-total {
+    margin-top: 10px;
+    padding-top: 15px;
+    border-top: 2px solid #c8e600;
+}
+
+.opc-grand-total .opc-total-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.opc-grand-total .opc-total-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #e74c3c;
+}
+
+/* Order Notes */
+.opc-notes-section {
+    padding: 20px 0;
+    border-top: 1px solid #e5e5e5;
+}
+
+.opc-notes-desc {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+/* Submit Button */
+.opc-submit-section {
+    padding-top: 20px;
+}
+
+.opc-btn-checkout {
+    width: 100%;
+    padding: 18px;
+    background: #c8e600;
+    color: #333;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.opc-btn-checkout:hover {
+    background: #b3cc00;
+}
+
+.opc-btn-checkout:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Login Section */
+.opc-login-section {
+    background: #fafff0;
+}
+
+.opc-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.opc-login-form {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e5e5;
+}
+
+/* Loading Overlay */
+.opc-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.opc-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e5e5e5;
+    border-top-color: #c8e600;
+    border-radius: 50%;
+    animation: opc-spin 1s linear infinite;
+}
+
+@keyframes opc-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.opc-loading-text {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #666;
+}
+
+/* Error Modal */
+.opc-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.opc-modal-content {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    position: relative;
+}
+
+.opc-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 28px;
+    color: #999;
+    cursor: pointer;
+}
+
+.opc-modal-close:hover {
+    color: #333;
+}
+
+.opc-modal-body {
+    color: #e74c3c;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .opc-checkout-container {
+        padding: 10px;
+    }
+
+    .opc-title {
+        font-size: 22px;
+    }
+
+    .opc-section {
+        padding: 15px;
+    }
+
+    .opc-form-row {
+        flex-direction: column;
+    }
+
+    .opc-birthday-selects {
+        flex-wrap: wrap;
+    }
+
+    .opc-select-day,
+    .opc-select-month,
+    .opc-select-year {
+        flex: 1 1 100%;
+    }
+
+    .opc-radio-label {
+        flex-wrap: wrap;
+        padding: 10px;
+    }
+
+    .opc-carrier-price {
+        width: 100%;
+        text-align: right;
+        margin-top: 10px;
+    }
+
+    .opc-discount-form {
+        flex-direction: column;
+    }
+
+    .opc-product-item {
+        flex-direction: column;
+    }
+
+    .opc-product-image {
+        width: 100%;
+        height: auto;
+        max-width: 80px;
+    }
+}
+
+/* Animations */
+.opc-section,
+.opc-order-summary {
+    animation: opc-fadeIn 0.3s ease-out;
+}
+
+@keyframes opc-fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Error Messages */
+.opc-error-message {
+    color: #e74c3c;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.opc-success-message {
+    color: #27ae60;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* Applied Discounts */
+.opc-applied-discounts {
+    margin-top: 15px;
+}
+
+.opc-applied-discount {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 4px;
+    margin-bottom: 5px;
+}
+
+.opc-remove-discount {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.opc-remove-discount:hover {
+    color: #c0392b;
+}
