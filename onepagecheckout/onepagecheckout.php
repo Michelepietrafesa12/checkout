@@ -144,9 +144,10 @@ class OnePageCheckout extends Module
     }
 
     /**
-     * Get available payment modules
+     * Get available payment modules for checkout
+     * Note: Method renamed to avoid conflict with ModuleCore::getPaymentModules()
      */
-    public function getPaymentModules()
+    public function getActivePaymentModulesForCheckout()
     {
         return PaymentModule::getInstalledPaymentModules();
     }
