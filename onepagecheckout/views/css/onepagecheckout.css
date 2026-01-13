@@ -942,6 +942,7 @@
 }
 
 /* Success Modal - Shopify Style */
+/* IMPORTANT: Default is hidden - JavaScript shows it with inline style */
 .opc-success-modal {
     position: fixed !important;
     top: 0 !important;
@@ -950,7 +951,7 @@
     height: 100% !important;
     background: var(--opc-white) !important;
     z-index: 10001 !important;
-    display: flex !important;
+    display: none;  /* Hidden by default - NO !important so inline style can override */
     flex-direction: column !important;
     justify-content: center !important;
     align-items: center !important;
@@ -1104,7 +1105,7 @@
     animation: opc-spin 0.8s linear infinite !important;
 }
 
-/* Old success styles */
+/* Old success styles - DEPRECATED, keeping for backwards compatibility */
 .opc-order-success {
     position: fixed !important;
     top: 0 !important;
@@ -1113,7 +1114,7 @@
     height: 100% !important;
     background: var(--opc-white) !important;
     z-index: 10001 !important;
-    display: flex !important;
+    display: none;  /* Hidden by default */
     flex-direction: column !important;
     justify-content: center !important;
     align-items: center !important;
