@@ -530,8 +530,12 @@
                 return;
             }
 
-            if (response.order_created) {
+            if (response.order_created && response.confirmation_url) {
                 // Order was created (offline payment like wire transfer, COD)
+                // Redirect to PrestaShop order confirmation page
+                window.location.href = response.confirmation_url;
+            } else if (response.order_created) {
+                // Fallback to inline success if no confirmation URL
                 showOrderSuccess(response.order_reference);
             } else if (response.use_iframe && response.payment_url) {
                 // Online payment - open in iframe
