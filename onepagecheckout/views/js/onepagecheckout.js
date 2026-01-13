@@ -75,7 +75,7 @@
         on('#opc-apply-discount', 'click', handleApplyDiscount);
 
         // Remove discount
-        document.querySelectorAll('.opc-remove-discount').forEach(function(el) {
+        document.querySelectorAll('.opc-remove-discount, .opc-code-remove').forEach(function(el) {
             el.addEventListener('click', handleRemoveDiscount);
         });
 
@@ -295,10 +295,11 @@
         var carrierId = e.target.value;
 
         // Update visual state
-        document.querySelectorAll('.opc-carrier-option').forEach(function(el) {
+        document.querySelectorAll('.opc-option-card, .opc-carrier-option').forEach(function(el) {
             el.classList.remove('selected');
         });
-        e.target.closest('.opc-carrier-option').classList.add('selected');
+        var card = e.target.closest('.opc-option-card') || e.target.closest('.opc-carrier-option');
+        if (card) card.classList.add('selected');
 
         showLoading();
         ajax('updateCarrier', { id_carrier: carrierId }, function(response) {
@@ -369,16 +370,18 @@
         if (!container || !carriers) return;
 
         if (carriers.length === 0) {
-            container.innerHTML = '<p class="opc-message">Completa l\'indirizzo per vedere le opzioni di spedizione</p>';
+            container.innerHTML = '<p class="opc-empty-message">Inserisci l\'indirizzo per vedere le opzioni di spedizione</p>';
             return;
         }
 
         var html = '';
         carriers.forEach(function(carrier) {
-            html += '<label class="opc-carrier-option ' + (carrier.selected ? 'selected' : '') + '">';
+            html += '<label class="opc-option-card ' + (carrier.selected ? 'selected' : '') + '">';
             html += '<input type="radio" name="id_carrier" value="' + carrier.id_carrier + '"' + (carrier.selected ? ' checked' : '') + ' />';
-            html += '<span class="opc-carrier-name">' + carrier.name + '</span>';
-            html += '<span class="opc-carrier-price">' + carrier.price_formatted + '</span>';
+            html += '<span class="opc-option-content">';
+            html += '<span class="opc-option-name">' + carrier.name + '</span>';
+            html += '</span>';
+            html += '<span class="opc-option-price">' + carrier.price_formatted + '</span>';
             html += '</label>';
         });
 
@@ -400,14 +403,20 @@
         if (!e.target) return;
 
         // Hide all payment info and forms
-        document.querySelectorAll('.opc-payment-info, .opc-payment-form-container').forEach(function(el) {
+        document.querySelectorAll('.opc-payment-info, .opc-payment-extra, .opc-payment-form-container').forEach(function(el) {
             el.style.display = 'none';
         });
 
+        // Remove selected class from all payment cards
+        document.querySelectorAll('.opc-payment-card, .opc-payment-option').forEach(function(el) {
+            el.classList.remove('selected');
+        });
+
         // Show selected payment's info and form
-        var option = e.target.closest('.opc-payment-option');
+        var option = e.target.closest('.opc-payment-card') || e.target.closest('.opc-payment-option');
         if (option) {
-            var info = option.querySelector('.opc-payment-info');
+            option.classList.add('selected');
+            var info = option.querySelector('.opc-payment-info') || option.querySelector('.opc-payment-extra');
             var form = option.querySelector('.opc-payment-form-container');
             if (info) info.style.display = 'block';
             if (form) form.style.display = 'block';
@@ -445,7 +454,7 @@
             hideLoading();
             if (response.success) {
                 updateTotals(response.cart_summary);
-                var el = e.target.closest('.opc-applied-discount');
+                var el = e.target.closest('.opc-applied-discount') || e.target.closest('.opc-applied-code');
                 if (el) el.remove();
             }
         });
@@ -518,7 +527,7 @@
         var data = {
             payment_module: paymentRadio ? paymentRadio.value : '',
             terms_accepted: termsCheckbox ? termsCheckbox.checked : true,
-            order_message: getValue('#order_message')
+            order_message: getValue('#order_notes') || getValue('#order_message')
         };
 
         ajax('createOrder', data, function(response) {
