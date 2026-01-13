@@ -76,17 +76,34 @@
                         </div>
                     </div>
 
-                    {* Country *}
-                    <div class="opc-form-group">
-                        <label for="id_country">{l s='Nazione' mod='onepagecheckout'} *</label>
-                        <select id="id_country" name="id_country" class="opc-select" required>
-                            {foreach $countries as $country}
-                                <option value="{$country.id_country}"
-                                        {if (isset($address_data.id_country) && $address_data.id_country == $country.id_country) || (!isset($address_data.id_country) && $country.id_country == $default_country)}selected{/if}>
-                                    {$country.name}
-                                </option>
-                            {/foreach}
-                        </select>
+                    {* Country and Province Row *}
+                    <div class="opc-form-row">
+                        <div class="opc-form-group opc-half">
+                            <label for="id_country">{l s='Nazione' mod='onepagecheckout'} *</label>
+                            <select id="id_country" name="id_country" class="opc-select" required>
+                                {foreach $countries as $country}
+                                    <option value="{$country.id_country}"
+                                            data-contains-states="{if isset($country.contains_states)}{$country.contains_states}{else}0{/if}"
+                                            {if (isset($address_data.id_country) && $address_data.id_country == $country.id_country) || (!isset($address_data.id_country) && $country.id_country == $default_country)}selected{/if}>
+                                        {$country.name}
+                                    </option>
+                                {/foreach}
+                            </select>
+                        </div>
+                        <div class="opc-form-group opc-half" id="opc-state-container" {if empty($states)}style="display:none;"{/if}>
+                            <label for="id_state">{l s='Provincia' mod='onepagecheckout'} *</label>
+                            <select id="id_state" name="id_state" class="opc-select">
+                                <option value="">{l s='-- Seleziona --' mod='onepagecheckout'}</option>
+                                {if isset($states) && $states}
+                                    {foreach $states as $state}
+                                        <option value="{$state.id_state}"
+                                                {if isset($address_data.id_state) && $address_data.id_state == $state.id_state}selected{/if}>
+                                            {$state.name}
+                                        </option>
+                                    {/foreach}
+                                {/if}
+                            </select>
+                        </div>
                     </div>
 
                     {* Saved addresses for logged users *}

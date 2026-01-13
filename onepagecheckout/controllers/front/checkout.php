@@ -211,6 +211,20 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
         // Default country
         $default_country = (int)Configuration::get('PS_COUNTRY_DEFAULT');
 
+        // Get states for the current country
+        $current_country = isset($address_data['id_country']) ? (int)$address_data['id_country'] : $default_country;
+        $states = State::getStatesByIdCountry($current_country);
+        $states_formatted = [];
+        if ($states) {
+            foreach ($states as $state) {
+                $states_formatted[] = [
+                    'id_state' => (int)$state['id_state'],
+                    'name' => $state['name'],
+                    'iso_code' => $state['iso_code'],
+                ];
+            }
+        }
+
         // Terms configuration
         $show_terms = (bool)Configuration::get('PS_CONDITIONS');
         $terms_cms_id = (int)Configuration::get('PS_CONDITIONS_CMS_ID');
@@ -227,6 +241,7 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
             'carriers' => $carriers,
             'payment_options' => $payment_options,
             'countries' => $countries,
+            'states' => $states_formatted,
             'customer_types' => $customer_types,
             'days' => $days,
             'months' => $months,

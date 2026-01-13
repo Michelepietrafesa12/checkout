@@ -51,8 +51,11 @@
             el.addEventListener('blur', debouncedSave);
         });
 
-        // Country change - update carriers
+        // Country change - update carriers and states
         on('#id_country', 'change', function() {
+            // Load states for the selected country
+            loadStates(getValue('#id_country'));
+            // Then save data and refresh carriers
             saveAllData(function() {
                 refreshCarriers();
             });
@@ -199,6 +202,19 @@
                 setValueIfExists('#phone_mobile', data.phone_mobile);
                 setValueIfExists('#company', data.company);
                 setValueIfExists('#vat_number', data.vat_number);
+
+                // Load states for the country and select the state
+                if (data.id_country) {
+                    ajax('getStates', { id_country: data.id_country }, function(response) {
+                        if (response.success) {
+                            updateStates(response.states, response.need_state);
+                            // After states are loaded, select the correct one
+                            if (data.id_state) {
+                                setValueIfExists('#id_state', data.id_state);
+                            }
+                        }
+                    });
+                }
             }
         } catch (e) {
             // Ignore JSON parse errors
@@ -251,6 +267,7 @@
             postcode: getValue('#postcode'),
             city: getValue('#city'),
             id_country: getValue('#id_country'),
+            id_state: getValue('#id_state'),
             phone: getValue('#phone'),
             phone_mobile: getValue('#phone_mobile'),
             company: getValue('#company'),
@@ -298,6 +315,53 @@
                 updateCarriers(response.carriers);
             }
         });
+    }
+
+    // Load states for a country
+    function loadStates(countryId) {
+        if (!countryId) {
+            hideStateContainer();
+            return;
+        }
+
+        ajax('getStates', { id_country: countryId }, function(response) {
+            if (response.success) {
+                updateStates(response.states, response.need_state);
+            }
+        });
+    }
+
+    function updateStates(states, needState) {
+        var container = document.getElementById('opc-state-container');
+        var select = document.getElementById('id_state');
+
+        if (!container || !select) return;
+
+        if (!states || states.length === 0 || !needState) {
+            container.style.display = 'none';
+            select.value = '';
+            select.removeAttribute('required');
+            return;
+        }
+
+        // Show container
+        container.style.display = '';
+
+        // Build options
+        var html = '<option value="">-- Seleziona --</option>';
+        states.forEach(function(state) {
+            html += '<option value="' + state.id_state + '">' + state.name + '</option>';
+        });
+
+        select.innerHTML = html;
+        select.setAttribute('required', 'required');
+    }
+
+    function hideStateContainer() {
+        var container = document.getElementById('opc-state-container');
+        if (container) {
+            container.style.display = 'none';
+        }
     }
 
     function updateCarriers(carriers) {
