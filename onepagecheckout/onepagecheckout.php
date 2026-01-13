@@ -42,6 +42,7 @@ class OnePageCheckout extends Module
             && $this->registerHook('displayBeforeBodyClosingTag')
             && $this->registerHook('actionFrontControllerSetMedia')
             && $this->registerHook('actionDispatcher')
+            && $this->registerHook('moduleRoutes')
             && Configuration::updateValue('OPC_GUEST_CHECKOUT', 1)
             && Configuration::updateValue('OPC_SHOW_NEWSLETTER', 1)
             && Configuration::updateValue('OPC_REQUIRE_PHONE', 0)
@@ -248,6 +249,24 @@ class OnePageCheckout extends Module
         ];
 
         return $helper->generateForm([$fields_form]);
+    }
+
+    /**
+     * Register module routes for friendly URL /checkout
+     */
+    public function hookModuleRoutes()
+    {
+        return [
+            'module-onepagecheckout-checkout' => [
+                'rule' => 'checkout',
+                'keywords' => [],
+                'controller' => 'checkout',
+                'params' => [
+                    'fc' => 'module',
+                    'module' => 'onepagecheckout',
+                ],
+            ],
+        ];
     }
 
     public function hookDisplayHeader()

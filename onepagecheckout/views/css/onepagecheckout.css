@@ -1,6 +1,57 @@
 /**
- * One Page Checkout - PlusPower Style
+ * One Page Checkout - Minimal Style
  */
+
+/* Body reset for checkout */
+.opc-body {
+    background: #f5f5f5 !important;
+}
+
+/* Minimal Header */
+.opc-minimal-header {
+    background: #fff !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+    padding: 15px 20px !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+}
+
+.opc-header-container {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+
+.opc-logo-link {
+    flex: 0 0 auto !important;
+}
+
+.opc-logo {
+    max-height: 45px !important;
+    width: auto !important;
+}
+
+.opc-header-title {
+    flex: 1 1 auto !important;
+    text-align: center !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    color: #333 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+}
+
+.opc-header-spacer {
+    flex: 0 0 100px !important;
+}
+
+/* Main Content */
+.opc-main-content {
+    padding: 30px 20px !important;
+}
 
 /* Reset and Base - High specificity to override theme */
 #content.opc-checkout-container,
@@ -115,6 +166,35 @@
     flex-direction: column !important;
     gap: 6px !important;
     margin-bottom: 0 !important;
+}
+
+/* Form Row for inline fields */
+.opc-checkout-container .opc-form-row {
+    display: flex !important;
+    gap: 15px !important;
+}
+
+.opc-checkout-container .opc-form-row .opc-half {
+    flex: 1 1 50% !important;
+}
+
+.opc-checkout-container .opc-form-row .opc-third {
+    flex: 0 0 30% !important;
+}
+
+.opc-checkout-container .opc-form-row .opc-two-thirds {
+    flex: 1 1 70% !important;
+}
+
+@media (max-width: 600px) {
+    .opc-checkout-container .opc-form-row {
+        flex-direction: column !important;
+    }
+    .opc-checkout-container .opc-form-row .opc-half,
+    .opc-checkout-container .opc-form-row .opc-third,
+    .opc-checkout-container .opc-form-row .opc-two-thirds {
+        flex: 1 1 100% !important;
+    }
 }
 
 .opc-checkout-container .opc-form-group > label {
@@ -521,6 +601,90 @@
     font-weight: 500;
     color: #333;
     margin-bottom: 3px;
+}
+
+/* Simplified Products List */
+.opc-checkout-container .opc-products-list {
+    margin-bottom: 20px !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+    padding-bottom: 15px !important;
+}
+
+.opc-checkout-container .opc-products-list .opc-product-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 10px 0 !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+}
+
+.opc-checkout-container .opc-products-list .opc-product-item:last-child {
+    border-bottom: none !important;
+}
+
+.opc-checkout-container .opc-products-list .opc-product-img {
+    width: 50px !important;
+    height: 50px !important;
+    object-fit: cover !important;
+    border-radius: 4px !important;
+    border: 1px solid #e0e0e0 !important;
+    flex-shrink: 0 !important;
+}
+
+.opc-checkout-container .opc-products-list .opc-product-details {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+.opc-checkout-container .opc-products-list .opc-product-name {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #333 !important;
+    display: block !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.opc-checkout-container .opc-products-list .opc-product-qty {
+    font-size: 12px !important;
+    color: #888 !important;
+}
+
+.opc-checkout-container .opc-products-list .opc-product-price {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #333 !important;
+    flex-shrink: 0 !important;
+}
+
+/* Simplified Totals */
+.opc-checkout-container .opc-totals {
+    padding: 15px 0 !important;
+    border-top: 1px solid #e0e0e0 !important;
+}
+
+.opc-checkout-container .opc-total-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    padding: 8px 0 !important;
+    font-size: 14px !important;
+}
+
+.opc-checkout-container .opc-total-row.opc-discount-row span:last-child {
+    color: #e74c3c !important;
+}
+
+.opc-checkout-container .opc-total-row.opc-grand-total {
+    margin-top: 10px !important;
+    padding-top: 15px !important;
+    border-top: 2px solid #c8e600 !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+}
+
+.opc-checkout-container .opc-total-row.opc-grand-total span:last-child {
+    color: #e74c3c !important;
 }
 
 .opc-product-ref,

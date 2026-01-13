@@ -1,159 +1,84 @@
 {**
- * One Page Checkout Template - PlusPower Style
- * Single unified checkout page with inline payments
+ * One Page Checkout - Minimal Layout
  *}
 
-{extends file='page.tpl'}
+{extends file='module:onepagecheckout/views/templates/layouts/layout-checkout.tpl'}
 
-{block name='page_header_container'}{/block}
-
-{block name='page_content'}
+{block name='content'}
 <div class="opc-checkout-container">
-    <h1 class="opc-title">{l s='CONFERMA D\'ORDINE' mod='onepagecheckout'}</h1>
-
     <div class="opc-row">
-        {* Left Column - Customer Data & Payment *}
+        {* Left Column - Customer Data & Shipping *}
         <div class="opc-col-left">
-            <div class="opc-section" id="opc-main-form-section">
-                <h2 class="opc-section-title">{l s='I miei dati' mod='onepagecheckout'}</h2>
-
+            {* Customer Data *}
+            <div class="opc-section" id="opc-customer-section">
+                <h2 class="opc-section-title">{l s='I tuoi dati' mod='onepagecheckout'}</h2>
                 <form id="opc-checkout-form" class="opc-form">
-                    {* Customer Type *}
-                    <div class="opc-form-group">
-                        <label for="customer_type">{l s='Sono un/una' mod='onepagecheckout'}</label>
-                        <select id="customer_type" name="customer_type" class="opc-select">
-                            {foreach $customer_types as $type}
-                                <option value="{$type.value}" {if $checkout_session.customer_type == $type.value}selected{/if}>
-                                    {$type.label}
-                                </option>
-                            {/foreach}
-                        </select>
-                    </div>
-
-                    {* Invoice Request *}
-                    <div class="opc-form-group opc-checkbox-group">
-                        <label class="opc-checkbox-label">
-                            <input type="checkbox" id="wants_invoice" name="wants_invoice" value="1"
-                                   {if $checkout_session.wants_invoice}checked{/if} />
-                            <span>{l s='Richiedo l\'emissione della fattura' mod='onepagecheckout'}</span>
-                        </label>
-                    </div>
-
-                    {* Company fields *}
-                    <div id="opc-company-fields" class="opc-company-fields">
-                        <div class="opc-form-group">
-                            <label for="company">{l s='Ragione Sociale' mod='onepagecheckout'}</label>
-                            <input type="text" id="company" name="company" class="opc-input"
-                                   value="{if isset($address_data.company)}{$address_data.company|escape:'html':'UTF-8'}{/if}" />
+                    {* Name Row *}
+                    <div class="opc-form-row">
+                        <div class="opc-form-group opc-half">
+                            <label for="firstname">{l s='Nome' mod='onepagecheckout'} *</label>
+                            <input type="text" id="firstname" name="firstname" class="opc-input"
+                                   value="{$customer_data.firstname|escape:'html':'UTF-8'}" required />
                         </div>
-                        <div class="opc-form-group">
-                            <label for="vat_number">{l s='Partita IVA' mod='onepagecheckout'}</label>
-                            <input type="text" id="vat_number" name="vat_number" class="opc-input"
-                                   value="{if isset($address_data.vat_number)}{$address_data.vat_number|escape:'html':'UTF-8'}{/if}" />
+                        <div class="opc-form-group opc-half">
+                            <label for="lastname">{l s='Cognome' mod='onepagecheckout'} *</label>
+                            <input type="text" id="lastname" name="lastname" class="opc-input"
+                                   value="{$customer_data.lastname|escape:'html':'UTF-8'}" required />
                         </div>
                     </div>
 
-                    {* Name *}
-                    <div class="opc-form-group">
-                        <label for="firstname">{l s='Nome' mod='onepagecheckout'}</label>
-                        <input type="text" id="firstname" name="firstname" class="opc-input"
-                               value="{$customer_data.firstname|escape:'html':'UTF-8'}" required />
-                    </div>
-
-                    {* Surname *}
-                    <div class="opc-form-group">
-                        <label for="lastname">{l s='Cognome' mod='onepagecheckout'}</label>
-                        <input type="text" id="lastname" name="lastname" class="opc-input"
-                               value="{$customer_data.lastname|escape:'html':'UTF-8'}" required />
-                    </div>
-
-                    {* Birthday *}
-                    <div class="opc-form-group opc-birthday-group">
-                        <label>{l s='Data di nascita:' mod='onepagecheckout'}</label>
-                        <div class="opc-birthday-selects">
-                            <select id="birthday_day" name="birthday_day" class="opc-select opc-select-day">
-                                {foreach $days as $day}
-                                    <option value="{$day|string_format:'%02d'}"
-                                            {if isset($customer_birthday.day) && $customer_birthday.day == $day|string_format:'%02d'}selected{/if}>{$day}</option>
-                                {/foreach}
-                            </select>
-                            <select id="birthday_month" name="birthday_month" class="opc-select opc-select-month">
-                                {foreach $months as $month}
-                                    <option value="{$month.value}"
-                                            {if isset($customer_birthday.month) && $customer_birthday.month == $month.value}selected{/if}>{$month.label}</option>
-                                {/foreach}
-                            </select>
-                            <select id="birthday_year" name="birthday_year" class="opc-select opc-select-year">
-                                {foreach $years as $year}
-                                    <option value="{$year}"
-                                            {if isset($customer_birthday.year) && $customer_birthday.year == $year}selected{/if}>{$year}</option>
-                                {/foreach}
-                            </select>
-                        </div>
-                    </div>
-
-                    {* Email (for guests) *}
+                    {* Email *}
                     {if !$is_logged}
-                    <div class="opc-form-group opc-email-group">
-                        <label for="email">{l s='Email' mod='onepagecheckout'}</label>
+                    <div class="opc-form-group">
+                        <label for="email">{l s='Email' mod='onepagecheckout'} *</label>
                         <input type="email" id="email" name="email" class="opc-input" required />
                         <div id="opc-login-prompt" class="opc-login-prompt" style="display: none;">
-                            <span>{l s='Questa email è già registrata.' mod='onepagecheckout'}</span>
+                            <span>{l s='Email già registrata.' mod='onepagecheckout'}</span>
                             <a href="#" id="opc-show-login">{l s='Accedi' mod='onepagecheckout'}</a>
                         </div>
                         <div id="opc-login-inline" class="opc-login-inline" style="display: none;">
-                            <div class="opc-form-group">
-                                <label for="login_password">{l s='Password' mod='onepagecheckout'}</label>
-                                <input type="password" id="login_password" name="login_password" class="opc-input" />
-                            </div>
-                            <button type="button" class="opc-btn opc-btn-login" id="opc-login-btn">
-                                {l s='Accedi' mod='onepagecheckout'}
-                            </button>
+                            <input type="password" id="login_password" name="login_password" class="opc-input" placeholder="{l s='Password' mod='onepagecheckout'}" />
+                            <button type="button" class="opc-btn opc-btn-login" id="opc-login-btn">{l s='Accedi' mod='onepagecheckout'}</button>
                         </div>
+                    </div>
+                    {else}
+                    <div class="opc-form-group">
+                        <label>{l s='Email' mod='onepagecheckout'}</label>
+                        <input type="text" class="opc-input" value="{$customer_data.email|escape:'html':'UTF-8'}" disabled />
                     </div>
                     {/if}
 
                     {* Phone *}
                     <div class="opc-form-group">
-                        <label for="phone">
-                            {l s='Telefono' mod='onepagecheckout'}
-                            <span class="opc-optional">{l s='Campo non obbligatorio' mod='onepagecheckout'}</span>
-                        </label>
+                        <label for="phone">{l s='Telefono' mod='onepagecheckout'}</label>
                         <input type="tel" id="phone" name="phone" class="opc-input"
                                value="{if isset($address_data.phone)}{$address_data.phone|escape:'html':'UTF-8'}{/if}" />
                     </div>
 
-                    {* Mobile Phone *}
-                    <div class="opc-form-group">
-                        <label for="phone_mobile">{l s='Cellulare' mod='onepagecheckout'}</label>
-                        <input type="tel" id="phone_mobile" name="phone_mobile" class="opc-input"
-                               value="{if isset($address_data.phone_mobile)}{$address_data.phone_mobile|escape:'html':'UTF-8'}{/if}" />
-                    </div>
-
                     {* Address *}
                     <div class="opc-form-group">
-                        <label for="address1">{l s='Indirizzo e numero civico' mod='onepagecheckout'}</label>
+                        <label for="address1">{l s='Indirizzo' mod='onepagecheckout'} *</label>
                         <input type="text" id="address1" name="address1" class="opc-input"
                                value="{if isset($address_data.address1)}{$address_data.address1|escape:'html':'UTF-8'}{/if}" required />
                     </div>
 
-                    {* ZIP Code *}
-                    <div class="opc-form-group">
-                        <label for="postcode">{l s='CAP' mod='onepagecheckout'}</label>
-                        <input type="text" id="postcode" name="postcode" class="opc-input"
-                               value="{if isset($address_data.postcode)}{$address_data.postcode|escape:'html':'UTF-8'}{/if}" required />
-                    </div>
-
-                    {* City *}
-                    <div class="opc-form-group">
-                        <label for="city">{l s='Città' mod='onepagecheckout'}</label>
-                        <input type="text" id="city" name="city" class="opc-input"
-                               value="{if isset($address_data.city)}{$address_data.city|escape:'html':'UTF-8'}{/if}" required />
+                    {* City and ZIP Row *}
+                    <div class="opc-form-row">
+                        <div class="opc-form-group opc-third">
+                            <label for="postcode">{l s='CAP' mod='onepagecheckout'} *</label>
+                            <input type="text" id="postcode" name="postcode" class="opc-input"
+                                   value="{if isset($address_data.postcode)}{$address_data.postcode|escape:'html':'UTF-8'}{/if}" required />
+                        </div>
+                        <div class="opc-form-group opc-two-thirds">
+                            <label for="city">{l s='Città' mod='onepagecheckout'} *</label>
+                            <input type="text" id="city" name="city" class="opc-input"
+                                   value="{if isset($address_data.city)}{$address_data.city|escape:'html':'UTF-8'}{/if}" required />
+                        </div>
                     </div>
 
                     {* Country *}
                     <div class="opc-form-group">
-                        <label for="id_country">{l s='Nazione' mod='onepagecheckout'}</label>
+                        <label for="id_country">{l s='Nazione' mod='onepagecheckout'} *</label>
                         <select id="id_country" name="id_country" class="opc-select" required>
                             {foreach $countries as $country}
                                 <option value="{$country.id_country}"
@@ -164,17 +89,16 @@
                         </select>
                     </div>
 
-                    {* Address selector for logged users *}
+                    {* Saved addresses for logged users *}
                     {if $is_logged && count($addresses) > 0}
-                    <div class="opc-form-group opc-address-selector">
-                        <label for="select_address">{l s='Oppure seleziona un indirizzo salvato' mod='onepagecheckout'}</label>
+                    <div class="opc-form-group">
+                        <label for="select_address">{l s='Indirizzi salvati' mod='onepagecheckout'}</label>
                         <select id="select_address" name="select_address" class="opc-select">
-                            <option value="">{l s='-- Usa i dati inseriti sopra --' mod='onepagecheckout'}</option>
+                            <option value="">{l s='-- Nuovo indirizzo --' mod='onepagecheckout'}</option>
                             {foreach $addresses as $address}
-                                <option value="{$address.id_address}"
-                                        data-address='{$address|json_encode}'
+                                <option value="{$address.id_address}" data-address='{$address|json_encode}'
                                         {if $address.id_address == $selected_address_id}selected{/if}>
-                                    {$address.alias} - {$address.address1}, {$address.postcode} {$address.city}
+                                    {$address.alias} - {$address.address1}, {$address.city}
                                 </option>
                             {/foreach}
                         </select>
@@ -183,213 +107,155 @@
                 </form>
             </div>
 
-            {* Shipping Method *}
-            <div class="opc-section opc-section-compact" id="opc-shipping-section">
+            {* Shipping *}
+            <div class="opc-section" id="opc-shipping-section">
                 <h2 class="opc-section-title">{l s='Spedizione' mod='onepagecheckout'}</h2>
                 <div class="opc-carriers-list" id="opc-carriers-list">
                     {if count($carriers) > 0}
                         {foreach $carriers as $carrier}
                         <label class="opc-carrier-option {if $carrier.selected}selected{/if}">
-                            <input type="radio" name="id_carrier" value="{$carrier.id_carrier}"
-                                   {if $carrier.selected}checked{/if} />
+                            <input type="radio" name="id_carrier" value="{$carrier.id_carrier}" {if $carrier.selected}checked{/if} />
                             <span class="opc-carrier-name">{$carrier.name}</span>
                             <span class="opc-carrier-price">{$carrier.price_formatted}</span>
                         </label>
                         {/foreach}
                     {else}
-                        <p class="opc-message">{l s='Completa l\'indirizzo per vedere le opzioni di spedizione' mod='onepagecheckout'}</p>
+                        <p class="opc-message">{l s='Inserisci indirizzo' mod='onepagecheckout'}</p>
                     {/if}
                 </div>
             </div>
 
-            {* Payment Method - With Inline Forms *}
+            {* Payment *}
             <div class="opc-section" id="opc-payment-section">
                 <h2 class="opc-section-title">{l s='Pagamento' mod='onepagecheckout'}</h2>
                 <div class="opc-payment-list" id="opc-payment-list">
                     {if count($payment_options) > 0}
                         {foreach $payment_options as $key => $option}
-                        <div class="opc-payment-option" data-module="{$option.module_name}" data-action="{$option.action}" data-binary="{if $option.binary}1{else}0{/if}">
+                        <div class="opc-payment-option {if $key == 0}selected{/if}" data-module="{$option.module_name}">
                             <label class="opc-payment-label">
-                                <input type="radio" name="payment_module" value="{$option.module_name}"
-                                       {if $key == 0}checked{/if} />
-                                {if $option.logo}
-                                    <img src="{$option.logo}" alt="{$option.call_to_action_text}" class="opc-payment-logo" />
-                                {/if}
+                                <input type="radio" name="payment_module" value="{$option.module_name}" {if $key == 0}checked{/if} />
+                                {if $option.logo}<img src="{$option.logo}" alt="" class="opc-payment-logo" />{/if}
                                 <span class="opc-payment-name">{$option.call_to_action_text}</span>
                             </label>
-                            {* Payment Additional Info *}
                             {if $option.additional_information}
-                                <div class="opc-payment-info" style="display: {if $key == 0}block{else}none{/if};">
-                                    {$option.additional_information nofilter}
-                                </div>
-                            {/if}
-                            {* Payment Form (for inline payments like credit card, wire transfer, etc.) *}
-                            {if $option.form}
-                                <div class="opc-payment-form-container" style="display: {if $key == 0}block{else}none{/if};">
-                                    {$option.form nofilter}
-                                </div>
+                            <div class="opc-payment-info" style="display: {if $key == 0}block{else}none{/if};">
+                                {$option.additional_information nofilter}
+                            </div>
                             {/if}
                         </div>
                         {/foreach}
                     {else}
-                        <p class="opc-message">{l s='Nessun metodo di pagamento disponibile' mod='onepagecheckout'}</p>
+                        <p class="opc-message">{l s='Nessun metodo disponibile' mod='onepagecheckout'}</p>
                     {/if}
                 </div>
             </div>
 
-            {* Terms and Conditions *}
-            <div class="opc-terms-inline" id="opc-terms-section">
-                {if $show_terms}
+            {* Terms *}
+            {if $show_terms}
+            <div class="opc-terms">
                 <label class="opc-checkbox-label">
                     <input type="checkbox" id="terms-and-conditions" name="terms" value="1" required />
-                    <span>{l s='Accetto le' mod='onepagecheckout'} <a href="{$termsLink}" target="_blank">{l s='condizioni generali di vendita' mod='onepagecheckout'}</a></span>
+                    <span>{l s='Accetto le' mod='onepagecheckout'} <a href="{$termsLink}" target="_blank">{l s='condizioni di vendita' mod='onepagecheckout'}</a></span>
                 </label>
-                {/if}
             </div>
+            {/if}
         </div>
 
-        {* Right Column - Order Summary *}
+        {* Right Column - Summary *}
         <div class="opc-col-right">
-            <div class="opc-order-summary" id="opc-order-summary">
-                <h2 class="opc-section-title">{l s='Riepilogo ordine' mod='onepagecheckout'}</h2>
+            <div class="opc-order-summary">
+                <h2 class="opc-section-title">{l s='Riepilogo' mod='onepagecheckout'}</h2>
 
-                {* Discount Code *}
+                {* Products *}
+                <div class="opc-products-list" id="opc-products-list">
+                    {foreach $cart_summary.products as $product}
+                    <div class="opc-product-item">
+                        <img src="{$product.image}" alt="" class="opc-product-img" />
+                        <div class="opc-product-details">
+                            <span class="opc-product-name">{$product.name}</span>
+                            <span class="opc-product-qty">x{$product.quantity}</span>
+                        </div>
+                        <span class="opc-product-price">{Tools::displayPrice($product.total_wt)}</span>
+                    </div>
+                    {/foreach}
+                </div>
+
+                {* Discount *}
                 <div class="opc-discount-box">
-                    <h3 class="opc-box-title">{l s='Buoni Regalo e Codici Promozionali' mod='onepagecheckout'}</h3>
                     <div class="opc-discount-form">
-                        <input type="text" id="discount_code" name="discount_code" class="opc-input"
-                               placeholder="{l s='Inserisci il codice' mod='onepagecheckout'}" />
-                        <button type="button" class="opc-btn opc-btn-apply" id="opc-apply-discount">
-                            {l s='Utilizza' mod='onepagecheckout'}
-                        </button>
+                        <input type="text" id="discount_code" class="opc-input" placeholder="{l s='Codice sconto' mod='onepagecheckout'}" />
+                        <button type="button" class="opc-btn opc-btn-apply" id="opc-apply-discount">{l s='Applica' mod='onepagecheckout'}</button>
                     </div>
                     <div id="opc-applied-discounts" class="opc-applied-discounts">
                         {foreach $cart_summary.cart_rules as $rule}
                         <div class="opc-applied-discount" data-id="{$rule.id_cart_rule}">
                             <span>{$rule.name}</span>
-                            <span class="opc-discount-value">-{$rule.value}</span>
+                            <span>-{$rule.value}</span>
                             <button type="button" class="opc-remove-discount" data-id="{$rule.id_cart_rule}">&times;</button>
                         </div>
                         {/foreach}
                     </div>
                 </div>
 
-                {* Products List *}
-                <div class="opc-products-box">
-                    <table class="opc-products-table">
-                        <thead>
-                            <tr>
-                                <th>{l s='prodotti' mod='onepagecheckout'}</th>
-                                <th class="opc-col-right-align">{l s='prezzo' mod='onepagecheckout'}</th>
-                            </tr>
-                        </thead>
-                        <tbody id="opc-products-list">
-                            {foreach $cart_summary.products as $product}
-                            <tr class="opc-product-row">
-                                <td>
-                                    <div class="opc-product-item">
-                                        <img src="{$product.image}" alt="{$product.name}" class="opc-product-img" />
-                                        <div class="opc-product-info">
-                                            <div class="opc-product-price-line">
-                                                <span class="opc-qty">{$product.quantity} x</span>
-                                                {if isset($product.reduction_percent) && $product.reduction_percent > 0}
-                                                <span class="opc-old-price">{$product.regular_price_formatted}</span>
-                                                {/if}
-                                                <span class="opc-price">{Tools::displayPrice($product.price_wt)}</span>
-                                            </div>
-                                            <div class="opc-product-name">{$product.name}</div>
-                                            {if $product.reference}
-                                            <div class="opc-product-ref">{l s='Codice' mod='onepagecheckout'}: {$product.reference}</div>
-                                            {/if}
-                                            <div class="opc-product-stock">
-                                                <span class="opc-stock-dot"></span>
-                                                {l s='Disponibile' mod='onepagecheckout'}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="opc-col-right-align opc-product-total">
-                                    {Tools::displayPrice($product.total_wt)}
-                                </td>
-                            </tr>
-                            {/foreach}
-                        </tbody>
-                    </table>
-                </div>
-
                 {* Totals *}
-                <div class="opc-totals-box" id="opc-totals">
-                    <div class="opc-total-line">
-                        <span>{l s='Sub Tot' mod='onepagecheckout'}:</span>
+                <div class="opc-totals" id="opc-totals">
+                    <div class="opc-total-row">
+                        <span>{l s='Subtotale' mod='onepagecheckout'}</span>
                         <span id="opc-subtotal">{$cart_summary.subtotal_formatted}</span>
                     </div>
-                    <div class="opc-total-line">
-                        <span>{l s='Spese di Spedizione' mod='onepagecheckout'}:</span>
+                    <div class="opc-total-row">
+                        <span>{l s='Spedizione' mod='onepagecheckout'}</span>
                         <span id="opc-shipping-cost">{$cart_summary.shipping_formatted}</span>
                     </div>
                     {if $cart_summary.discounts > 0}
-                    <div class="opc-total-line opc-discount-line">
-                        <span>{l s='Sconti' mod='onepagecheckout'}:</span>
+                    <div class="opc-total-row opc-discount-row">
+                        <span>{l s='Sconto' mod='onepagecheckout'}</span>
                         <span id="opc-discounts">-{$cart_summary.discounts_formatted}</span>
                     </div>
                     {/if}
-                    <div class="opc-total-line opc-grand-total">
-                        <span>{l s='Totale ordine' mod='onepagecheckout'}:</span>
+                    <div class="opc-total-row opc-grand-total">
+                        <span>{l s='Totale' mod='onepagecheckout'}</span>
                         <span id="opc-total">{$cart_summary.total_formatted}</span>
                     </div>
                 </div>
 
-                {* Order Notes *}
-                <div class="opc-notes-box">
-                    <h3 class="opc-box-title">{l s='Note ordine' mod='onepagecheckout'}</h3>
-                    <p class="opc-notes-hint">{l s='Specifica eventuali tue indicazioni in merito all\'ordine' mod='onepagecheckout'}</p>
-                    <textarea id="order_message" name="order_message" class="opc-textarea"
-                              placeholder="{l s='Le tue note...' mod='onepagecheckout'}"></textarea>
-                </div>
-
-                {* Confirm Button *}
-                <button type="button" class="opc-btn opc-btn-confirm" id="opc-submit-order">
-                    {l s='Conferma e Paga' mod='onepagecheckout'}
+                {* Confirm *}
+                <button type="button" class="opc-btn-confirm" id="opc-submit-order">
+                    {l s='Conferma ordine' mod='onepagecheckout'}
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-{* Payment Processing Area - For iframe/redirect payments *}
+{* Payment Frame *}
 <div class="opc-payment-frame-container" id="opc-payment-frame-container" style="display: none;">
     <div class="opc-payment-frame-header">
-        <h3>{l s='Completa il pagamento' mod='onepagecheckout'}</h3>
+        <h3>{l s='Pagamento' mod='onepagecheckout'}</h3>
         <button type="button" class="opc-payment-frame-close" id="opc-payment-frame-close">&times;</button>
     </div>
     <div class="opc-payment-frame-content">
-        <iframe id="opc-payment-frame" name="opc-payment-frame" frameborder="0"></iframe>
+        <iframe id="opc-payment-frame" name="opc-payment-frame"></iframe>
     </div>
 </div>
 
-{* Hidden form for payment submission *}
-<form id="opc-payment-submit-form" method="post" target="opc-payment-frame" style="display: none;">
-    <input type="hidden" name="opc_order_validated" value="1" />
-</form>
-
-{* Loading Overlay *}
+{* Loading *}
 <div class="opc-overlay" id="opc-loading" style="display: none;">
     <div class="opc-spinner"></div>
-    <span class="opc-loading-text">{l s='Elaborazione in corso...' mod='onepagecheckout'}</span>
 </div>
 
-{* Toast Notifications *}
+{* Toast *}
 <div class="opc-toast" id="opc-toast" style="display: none;">
     <span id="opc-toast-message"></span>
     <button type="button" class="opc-toast-close">&times;</button>
 </div>
 
-{* Order Success Message *}
+{* Success *}
 <div class="opc-order-success" id="opc-order-success" style="display: none;">
-    <div class="opc-success-icon">✓</div>
+    <div class="opc-success-icon">&#10003;</div>
     <h2>{l s='Ordine confermato!' mod='onepagecheckout'}</h2>
-    <p>{l s='Il tuo ordine è stato registrato con successo.' mod='onepagecheckout'}</p>
-    <p class="opc-order-ref">{l s='Riferimento ordine' mod='onepagecheckout'}: <strong id="opc-order-reference"></strong></p>
-    <a href="{$urls.pages.history}" class="opc-btn opc-btn-confirm">{l s='Vedi i tuoi ordini' mod='onepagecheckout'}</a>
+    <p>{l s='Grazie per il tuo acquisto.' mod='onepagecheckout'}</p>
+    <p class="opc-order-ref">{l s='Ordine' mod='onepagecheckout'}: <strong id="opc-order-reference"></strong></p>
+    <a href="{$urls.pages.history}" class="opc-btn-confirm">{l s='I miei ordini' mod='onepagecheckout'}</a>
 </div>
 {/block}
