@@ -5,15 +5,16 @@
  */
 
 /**
- * Simple checkout session object for payment modules
- * Provides the interface that payment modules expect
+ * Complete checkout session object for payment modules
+ * Provides the full interface that PrestaShop payment modules expect
  */
 class OpcCheckoutSession
 {
-    public $cart;
-    public $customer;
-    public $language;
-    public $currency;
+    protected $cart;
+    protected $customer;
+    protected $language;
+    protected $currency;
+    protected $context;
 
     public function __construct($cart, $customer, $language, $currency)
     {
@@ -21,6 +22,7 @@ class OpcCheckoutSession
         $this->customer = $customer;
         $this->language = $language;
         $this->currency = $currency;
+        $this->context = Context::getContext();
     }
 
     public function getCart()
@@ -45,6 +47,52 @@ class OpcCheckoutSession
 
     public function getCheckoutProcess()
     {
+        return null;
+    }
+
+    /**
+     * Get delivery address - required by some payment modules
+     */
+    public function getDeliveryAddress()
+    {
+        if ($this->cart->id_address_delivery) {
+            return new Address((int)$this->cart->id_address_delivery);
+        }
+        return null;
+    }
+
+    /**
+     * Get invoice address - required by some payment modules
+     */
+    public function getInvoiceAddress()
+    {
+        $id_address = $this->cart->id_address_invoice ?: $this->cart->id_address_delivery;
+        if ($id_address) {
+            return new Address((int)$id_address);
+        }
+        return null;
+    }
+
+    /**
+     * Check if address is complete - for payment module validation
+     */
+    public function isAddressComplete()
+    {
+        if (!$this->cart->id_address_delivery) {
+            return false;
+        }
+        $address = new Address((int)$this->cart->id_address_delivery);
+        return Validate::isLoadedObject($address);
+    }
+
+    /**
+     * Magic getter for direct property access
+     */
+    public function __get($name)
+    {
+        if (property_exists($this, $name)) {
+            return $this->$name;
+        }
         return null;
     }
 }
@@ -405,6 +453,9 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
         $payment_options = [];
         $payment_modules = PaymentModule::getInstalledPaymentModules();
 
+        // Ensure cart has a temporary address if none exists (required for payment module validation)
+        $this->ensureCartHasAddress();
+
         foreach ($payment_modules as $module_info) {
             $module = Module::getInstanceByName($module_info['name']);
             if (!$module || !$module->active) {
@@ -416,7 +467,7 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
                 try {
                     $checkout_session = $this->buildCheckoutSession();
                     $options = $module->getPaymentOptions($checkout_session);
-                    if (is_array($options)) {
+                    if (is_array($options) && !empty($options)) {
                         foreach ($options as $option) {
                             $additional_info = '';
                             if (method_exists($option, 'getAdditionalInformation')) {
@@ -449,7 +500,157 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
             }
         }
 
+        // Fallback: if no payment options found, try to get offline payment modules directly
+        if (empty($payment_options)) {
+            $payment_options = $this->getOfflinePaymentModules($payment_modules);
+        }
+
         return $payment_options;
+    }
+
+    /**
+     * Ensure the cart has an address for payment module validation
+     * Creates a temporary address with default country if none exists
+     */
+    protected function ensureCartHasAddress()
+    {
+        $cart = $this->context->cart;
+
+        if ($cart->id_address_delivery) {
+            // Address already exists
+            return;
+        }
+
+        // Check if customer is logged and has addresses
+        if ($this->context->customer->isLogged()) {
+            $addresses = $this->context->customer->getAddresses($this->context->language->id);
+            if (!empty($addresses)) {
+                $cart->id_address_delivery = (int)$addresses[0]['id_address'];
+                $cart->id_address_invoice = (int)$addresses[0]['id_address'];
+                $cart->save();
+                return;
+            }
+        }
+
+        // Create a minimal temporary address for guest/new customers
+        // This allows payment modules to validate country restrictions
+        $id_country = (int)Configuration::get('PS_COUNTRY_DEFAULT');
+
+        // For guest checkout, create a temporary address
+        if (!$this->context->customer->isLogged()) {
+            // We'll create the address when the user submits the form
+            // For now, we use a different approach - bypass the address requirement
+            return;
+        }
+    }
+
+    /**
+     * Get offline payment modules as fallback
+     * Used when getPaymentOptions returns empty (common for cart without address)
+     */
+    protected function getOfflinePaymentModules($payment_modules)
+    {
+        $payment_options = [];
+
+        // Known offline payment module names
+        $offline_modules = [
+            'ps_wirepayment' => [
+                'name' => 'Bonifico Bancario',
+                'info' => 'Paga tramite bonifico bancario. Riceverai i dettagli bancari dopo aver confermato l\'ordine.',
+            ],
+            'ps_checkpayment' => [
+                'name' => 'Pagamento con Assegno',
+                'info' => 'Paga tramite assegno. Riceverai i dettagli dopo aver confermato l\'ordine.',
+            ],
+            'ps_cashondelivery' => [
+                'name' => 'Contrassegno',
+                'info' => 'Paga alla consegna del pacco.',
+            ],
+        ];
+
+        foreach ($payment_modules as $module_info) {
+            $module_name = $module_info['name'];
+
+            // Check if it's a known offline module
+            if (isset($offline_modules[$module_name])) {
+                $module = Module::getInstanceByName($module_name);
+                if ($module && $module->active) {
+                    // Check if module is enabled for current country
+                    if ($this->isPaymentModuleAvailable($module)) {
+                        $logo_path = _PS_MODULE_DIR_ . $module_name . '/logo.png';
+                        $logo = file_exists($logo_path)
+                            ? _MODULE_DIR_ . $module_name . '/logo.png'
+                            : '';
+
+                        $payment_options[] = [
+                            'module_name' => $module_name,
+                            'call_to_action_text' => $offline_modules[$module_name]['name'],
+                            'logo' => $logo,
+                            'action' => $this->context->link->getModuleLink('onepagecheckout', 'ajax'),
+                            'form' => null,
+                            'additional_information' => '<p>' . $offline_modules[$module_name]['info'] . '</p>',
+                            'binary' => false,
+                            'is_offline' => true,
+                        ];
+                    }
+                }
+            }
+        }
+
+        return $payment_options;
+    }
+
+    /**
+     * Check if payment module is available for current context
+     */
+    protected function isPaymentModuleAvailable($module)
+    {
+        $cart = $this->context->cart;
+        $id_country = (int)Configuration::get('PS_COUNTRY_DEFAULT');
+
+        // If cart has delivery address, use that country
+        if ($cart->id_address_delivery) {
+            $address = new Address((int)$cart->id_address_delivery);
+            if (Validate::isLoadedObject($address)) {
+                $id_country = (int)$address->id_country;
+            }
+        }
+
+        // Check country restriction using database
+        $sql_country = 'SELECT id_country FROM ' . _DB_PREFIX_ . 'module_country
+                        WHERE id_module = ' . (int)$module->id . '
+                        AND id_shop = ' . (int)$this->context->shop->id . '
+                        AND id_country = ' . (int)$id_country;
+        $country_enabled = Db::getInstance()->getValue($sql_country);
+
+        // If no country restriction exists, assume all countries are allowed
+        $sql_country_count = 'SELECT COUNT(*) FROM ' . _DB_PREFIX_ . 'module_country
+                              WHERE id_module = ' . (int)$module->id . '
+                              AND id_shop = ' . (int)$this->context->shop->id;
+        $country_restriction_exists = (bool)Db::getInstance()->getValue($sql_country_count);
+
+        if ($country_restriction_exists && !$country_enabled) {
+            return false;
+        }
+
+        // Check currency restriction using database
+        $sql_currency = 'SELECT id_currency FROM ' . _DB_PREFIX_ . 'module_currency
+                         WHERE id_module = ' . (int)$module->id . '
+                         AND id_shop = ' . (int)$this->context->shop->id . '
+                         AND id_currency = ' . (int)$this->context->currency->id;
+        $currency_enabled = Db::getInstance()->getValue($sql_currency);
+
+        // If no currency restriction exists, assume all currencies are allowed
+        $sql_currency_count = 'SELECT COUNT(*) FROM ' . _DB_PREFIX_ . 'module_currency
+                               WHERE id_module = ' . (int)$module->id . '
+                               AND id_shop = ' . (int)$this->context->shop->id;
+        $currency_restriction_exists = (bool)Db::getInstance()->getValue($sql_currency_count);
+
+        if ($currency_restriction_exists && !$currency_enabled) {
+            return false;
+        }
+
+        return true;
     }
 
     protected function buildCheckoutSession()

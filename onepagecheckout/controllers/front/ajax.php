@@ -6,12 +6,17 @@
 
 // Include checkout session class if not already defined
 if (!class_exists('OpcCheckoutSession')) {
+    /**
+     * Complete checkout session object for payment modules
+     * Provides the full interface that PrestaShop payment modules expect
+     */
     class OpcCheckoutSession
     {
-        public $cart;
-        public $customer;
-        public $language;
-        public $currency;
+        protected $cart;
+        protected $customer;
+        protected $language;
+        protected $currency;
+        protected $context;
 
         public function __construct($cart, $customer, $language, $currency)
         {
@@ -19,6 +24,7 @@ if (!class_exists('OpcCheckoutSession')) {
             $this->customer = $customer;
             $this->language = $language;
             $this->currency = $currency;
+            $this->context = Context::getContext();
         }
 
         public function getCart()
@@ -43,6 +49,40 @@ if (!class_exists('OpcCheckoutSession')) {
 
         public function getCheckoutProcess()
         {
+            return null;
+        }
+
+        public function getDeliveryAddress()
+        {
+            if ($this->cart->id_address_delivery) {
+                return new Address((int)$this->cart->id_address_delivery);
+            }
+            return null;
+        }
+
+        public function getInvoiceAddress()
+        {
+            $id_address = $this->cart->id_address_invoice ?: $this->cart->id_address_delivery;
+            if ($id_address) {
+                return new Address((int)$id_address);
+            }
+            return null;
+        }
+
+        public function isAddressComplete()
+        {
+            if (!$this->cart->id_address_delivery) {
+                return false;
+            }
+            $address = new Address((int)$this->cart->id_address_delivery);
+            return Validate::isLoadedObject($address);
+        }
+
+        public function __get($name)
+        {
+            if (property_exists($this, $name)) {
+                return $this->$name;
+            }
             return null;
         }
     }
