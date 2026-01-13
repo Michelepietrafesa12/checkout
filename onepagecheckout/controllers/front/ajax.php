@@ -57,6 +57,9 @@ class OnePageCheckoutAjaxModuleFrontController extends ModuleFrontController
             case 'processCheckout':
                 $this->processCheckout();
                 break;
+            case 'createOrder':
+                $this->createOrder();
+                break;
             case 'loginCustomer':
                 $this->loginCustomer();
                 break;
@@ -687,7 +690,7 @@ class OnePageCheckoutAjaxModuleFrontController extends ModuleFrontController
             $message->add();
         }
 
-        // Everything is valid, return success with payment action URL
+        // Get payment module instance
         $payment_module_instance = Module::getInstanceByName($payment_module);
 
         if (!$payment_module_instance || !$payment_module_instance->active) {
@@ -702,7 +705,27 @@ class OnePageCheckoutAjaxModuleFrontController extends ModuleFrontController
         $this->context->cookie->opc_checkout_validated = 1;
         $this->context->cookie->opc_payment_module = $payment_module;
 
-        // Build payment URL (payment modules handle their own validation and order creation)
+        // Get payment options to determine if it's inline or redirect
+        $payment_type = 'redirect'; // Default
+        $payment_form_action = '';
+
+        if (method_exists($payment_module_instance, 'getPaymentOptions')) {
+            try {
+                $options = $payment_module_instance->getPaymentOptions($this->buildCheckoutSession());
+                if (is_array($options) && !empty($options)) {
+                    $option = $options[0];
+                    $payment_form_action = $option->getAction();
+                    // If has form and action, it might be inline submittable
+                    if ($option->getForm() && $payment_form_action) {
+                        $payment_type = 'inline_form';
+                    }
+                }
+            } catch (Exception $e) {
+                // Fallback to redirect
+            }
+        }
+
+        // Build payment URL
         $payment_url = $this->context->link->getModuleLink(
             $payment_module,
             'payment',
@@ -710,10 +733,154 @@ class OnePageCheckoutAjaxModuleFrontController extends ModuleFrontController
             true
         );
 
+        // For some payment modules, try validation controller
+        $validation_url = $this->context->link->getModuleLink(
+            $payment_module,
+            'validation',
+            [],
+            true
+        );
+
         $this->json_response = [
             'success' => true,
+            'payment_type' => $payment_type,
+            'payment_url' => $payment_url,
+            'payment_form_action' => $payment_form_action ?: $validation_url,
+            'payment_module' => $payment_module,
+        ];
+    }
+
+    /**
+     * Create order for inline payment processing
+     * This creates the order first, then allows payment to complete
+     */
+    protected function createOrder()
+    {
+        $cart = $this->context->cart;
+        $customer = $this->context->customer;
+        $payment_module = Tools::getValue('payment_module');
+
+        // Validate everything first
+        if (!$cart->id || !$cart->nbProducts()) {
+            $this->json_response = ['success' => false, 'error' => $this->trans('Il carrello è vuoto', [], 'Modules.Onepagecheckout.Shop')];
+            return;
+        }
+
+        if (!$customer->id) {
+            $this->json_response = ['success' => false, 'error' => $this->trans('Devi inserire i tuoi dati', [], 'Modules.Onepagecheckout.Shop')];
+            return;
+        }
+
+        if (!$cart->id_address_delivery) {
+            $this->json_response = ['success' => false, 'error' => $this->trans('Indirizzo non valido', [], 'Modules.Onepagecheckout.Shop')];
+            return;
+        }
+
+        if (!$cart->id_carrier) {
+            $this->json_response = ['success' => false, 'error' => $this->trans('Seleziona la spedizione', [], 'Modules.Onepagecheckout.Shop')];
+            return;
+        }
+
+        if (empty($payment_module)) {
+            $this->json_response = ['success' => false, 'error' => $this->trans('Seleziona il pagamento', [], 'Modules.Onepagecheckout.Shop')];
+            return;
+        }
+
+        // Get payment module
+        $module = Module::getInstanceByName($payment_module);
+        if (!$module || !$module->active) {
+            $this->json_response = ['success' => false, 'error' => $this->trans('Metodo di pagamento non disponibile', [], 'Modules.Onepagecheckout.Shop')];
+            return;
+        }
+
+        // Store order message
+        $order_message = Tools::getValue('order_message', '');
+        if (!empty($order_message)) {
+            $message = new Message();
+            $message->id_cart = (int)$cart->id;
+            $message->id_customer = (int)$customer->id;
+            $message->message = pSQL($order_message);
+            $message->private = false;
+            $message->add();
+        }
+
+        // For offline payment methods (wire transfer, check, COD), we can create the order directly
+        $offline_modules = ['ps_wirepayment', 'ps_checkpayment', 'ps_cashondelivery'];
+
+        if (in_array($payment_module, $offline_modules)) {
+            // Create order with awaiting payment status
+            try {
+                $total = (float)$cart->getOrderTotal(true, Cart::BOTH);
+                $currency = $this->context->currency;
+
+                // Get appropriate order status
+                $order_status = Configuration::get('PS_OS_BANKWIRE'); // Awaiting bank wire
+                if ($payment_module === 'ps_checkpayment') {
+                    $order_status = Configuration::get('PS_OS_CHEQUE');
+                } elseif ($payment_module === 'ps_cashondelivery') {
+                    $order_status = Configuration::get('PS_OS_COD_VALIDATION') ?: Configuration::get('PS_OS_PREPARATION');
+                }
+
+                $module->validateOrder(
+                    (int)$cart->id,
+                    (int)$order_status,
+                    $total,
+                    $module->displayName,
+                    null,
+                    [],
+                    (int)$currency->id,
+                    false,
+                    $customer->secure_key
+                );
+
+                $order = new Order((int)$module->currentOrder);
+
+                $this->json_response = [
+                    'success' => true,
+                    'order_created' => true,
+                    'order_id' => (int)$order->id,
+                    'order_reference' => $order->reference,
+                    'confirmation_url' => $this->context->link->getPageLink(
+                        'order-confirmation',
+                        true,
+                        null,
+                        [
+                            'id_cart' => (int)$cart->id,
+                            'id_module' => (int)$module->id,
+                            'id_order' => (int)$order->id,
+                            'key' => $customer->secure_key,
+                        ]
+                    ),
+                ];
+                return;
+            } catch (Exception $e) {
+                $this->json_response = [
+                    'success' => false,
+                    'error' => $this->trans('Errore nella creazione dell\'ordine', [], 'Modules.Onepagecheckout.Shop') . ': ' . $e->getMessage(),
+                ];
+                return;
+            }
+        }
+
+        // For online payment methods, return payment URL for iframe/redirect
+        $payment_url = $this->context->link->getModuleLink($payment_module, 'payment', [], true);
+
+        $this->json_response = [
+            'success' => true,
+            'order_created' => false,
             'payment_url' => $payment_url,
             'payment_module' => $payment_module,
+            'use_iframe' => true, // Suggest using iframe for online payments
+        ];
+    }
+
+    protected function buildCheckoutSession()
+    {
+        return (object)[
+            'cart' => $this->context->cart,
+            'language' => $this->context->language,
+            'currency' => $this->context->currency,
+            'customer' => $this->context->customer,
         ];
     }
 

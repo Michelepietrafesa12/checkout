@@ -1,6 +1,6 @@
 {**
  * One Page Checkout Template - PlusPower Style
- * Single unified checkout page
+ * Single unified checkout page with inline payments
  *}
 
 {extends file='page.tpl'}
@@ -12,7 +12,7 @@
     <h1 class="opc-title">{l s='CONFERMA D\'ORDINE' mod='onepagecheckout'}</h1>
 
     <div class="opc-row">
-        {* Left Column - All Customer Data in One Form *}
+        {* Left Column - Customer Data & Payment *}
         <div class="opc-col-left">
             <div class="opc-section" id="opc-main-form-section">
                 <h2 class="opc-section-title">{l s='I miei dati' mod='onepagecheckout'}</h2>
@@ -39,7 +39,7 @@
                         </label>
                     </div>
 
-                    {* Company fields (shown when company type or invoice requested) *}
+                    {* Company fields *}
                     <div id="opc-company-fields" class="opc-company-fields">
                         <div class="opc-form-group">
                             <label for="company">{l s='Ragione Sociale' mod='onepagecheckout'}</label>
@@ -92,7 +92,7 @@
                         </div>
                     </div>
 
-                    {* Email (for guests only, show login if exists) *}
+                    {* Email (for guests) *}
                     {if !$is_logged}
                     <div class="opc-form-group opc-email-group">
                         <label for="email">{l s='Email' mod='onepagecheckout'}</label>
@@ -113,7 +113,7 @@
                     </div>
                     {/if}
 
-                    {* Phone - Optional *}
+                    {* Phone *}
                     <div class="opc-form-group">
                         <label for="phone">
                             {l s='Telefono' mod='onepagecheckout'}
@@ -164,7 +164,7 @@
                         </select>
                     </div>
 
-                    {* Existing addresses dropdown for logged users *}
+                    {* Address selector for logged users *}
                     {if $is_logged && count($addresses) > 0}
                     <div class="opc-form-group opc-address-selector">
                         <label for="select_address">{l s='Oppure seleziona un indirizzo salvato' mod='onepagecheckout'}</label>
@@ -183,7 +183,7 @@
                 </form>
             </div>
 
-            {* Shipping Method - Compact *}
+            {* Shipping Method *}
             <div class="opc-section opc-section-compact" id="opc-shipping-section">
                 <h2 class="opc-section-title">{l s='Spedizione' mod='onepagecheckout'}</h2>
                 <div class="opc-carriers-list" id="opc-carriers-list">
@@ -202,13 +202,13 @@
                 </div>
             </div>
 
-            {* Payment Method - Compact *}
-            <div class="opc-section opc-section-compact" id="opc-payment-section">
+            {* Payment Method - With Inline Forms *}
+            <div class="opc-section" id="opc-payment-section">
                 <h2 class="opc-section-title">{l s='Pagamento' mod='onepagecheckout'}</h2>
                 <div class="opc-payment-list" id="opc-payment-list">
                     {if count($payment_options) > 0}
                         {foreach $payment_options as $key => $option}
-                        <div class="opc-payment-option">
+                        <div class="opc-payment-option" data-module="{$option.module_name}" data-action="{$option.action}" data-binary="{if $option.binary}1{else}0{/if}">
                             <label class="opc-payment-label">
                                 <input type="radio" name="payment_module" value="{$option.module_name}"
                                        {if $key == 0}checked{/if} />
@@ -217,8 +217,15 @@
                                 {/if}
                                 <span class="opc-payment-name">{$option.call_to_action_text}</span>
                             </label>
+                            {* Payment Additional Info *}
+                            {if $option.additional_information}
+                                <div class="opc-payment-info" style="display: {if $key == 0}block{else}none{/if};">
+                                    {$option.additional_information nofilter}
+                                </div>
+                            {/if}
+                            {* Payment Form (for inline payments like credit card, wire transfer, etc.) *}
                             {if $option.form}
-                                <div class="opc-payment-form" style="display: {if $key == 0}block{else}none{/if};">
+                                <div class="opc-payment-form-container" style="display: {if $key == 0}block{else}none{/if};">
                                     {$option.form nofilter}
                                 </div>
                             {/if}
@@ -230,7 +237,7 @@
                 </div>
             </div>
 
-            {* Terms and Conditions - Inline *}
+            {* Terms and Conditions *}
             <div class="opc-terms-inline" id="opc-terms-section">
                 {if $show_terms}
                 <label class="opc-checkbox-label">
@@ -256,7 +263,6 @@
                             {l s='Utilizza' mod='onepagecheckout'}
                         </button>
                     </div>
-                    {* Applied discounts *}
                     <div id="opc-applied-discounts" class="opc-applied-discounts">
                         {foreach $cart_summary.cart_rules as $rule}
                         <div class="opc-applied-discount" data-id="{$rule.id_cart_rule}">
@@ -267,20 +273,6 @@
                         {/foreach}
                     </div>
                 </div>
-
-                {* Loyalty Points (if applicable) *}
-                {if isset($loyalty_points) && $loyalty_points > 0}
-                <div class="opc-loyalty-box">
-                    <p>{l s='Hai' mod='onepagecheckout'} <strong>{$loyalty_points}</strong> {l s='punti per un valore di' mod='onepagecheckout'} <strong>{$loyalty_value}</strong></p>
-                    <div class="opc-loyalty-form">
-                        <input type="text" id="loyalty_points_use" name="loyalty_points_use" class="opc-input"
-                               placeholder="{l s='Inserisci i punti' mod='onepagecheckout'}" />
-                        <button type="button" class="opc-btn opc-btn-apply" id="opc-apply-points">
-                            {l s='Utilizza' mod='onepagecheckout'}
-                        </button>
-                    </div>
-                </div>
-                {/if}
 
                 {* Products List *}
                 <div class="opc-products-box">
@@ -308,9 +300,6 @@
                                             <div class="opc-product-name">{$product.name}</div>
                                             {if $product.reference}
                                             <div class="opc-product-ref">{l s='Codice' mod='onepagecheckout'}: {$product.reference}</div>
-                                            {/if}
-                                            {if $product.attributes}
-                                            <div class="opc-product-attr">{$product.attributes}</div>
                                             {/if}
                                             <div class="opc-product-stock">
                                                 <span class="opc-stock-dot"></span>
@@ -360,21 +349,47 @@
 
                 {* Confirm Button *}
                 <button type="button" class="opc-btn opc-btn-confirm" id="opc-submit-order">
-                    {l s='Conferma ordine' mod='onepagecheckout'}
+                    {l s='Conferma e Paga' mod='onepagecheckout'}
                 </button>
             </div>
         </div>
     </div>
 </div>
 
+{* Payment Processing Area - For iframe/redirect payments *}
+<div class="opc-payment-frame-container" id="opc-payment-frame-container" style="display: none;">
+    <div class="opc-payment-frame-header">
+        <h3>{l s='Completa il pagamento' mod='onepagecheckout'}</h3>
+        <button type="button" class="opc-payment-frame-close" id="opc-payment-frame-close">&times;</button>
+    </div>
+    <div class="opc-payment-frame-content">
+        <iframe id="opc-payment-frame" name="opc-payment-frame" frameborder="0"></iframe>
+    </div>
+</div>
+
+{* Hidden form for payment submission *}
+<form id="opc-payment-submit-form" method="post" target="opc-payment-frame" style="display: none;">
+    <input type="hidden" name="opc_order_validated" value="1" />
+</form>
+
 {* Loading Overlay *}
 <div class="opc-overlay" id="opc-loading" style="display: none;">
     <div class="opc-spinner"></div>
+    <span class="opc-loading-text">{l s='Elaborazione in corso...' mod='onepagecheckout'}</span>
 </div>
 
-{* Error Messages *}
+{* Toast Notifications *}
 <div class="opc-toast" id="opc-toast" style="display: none;">
     <span id="opc-toast-message"></span>
     <button type="button" class="opc-toast-close">&times;</button>
+</div>
+
+{* Order Success Message *}
+<div class="opc-order-success" id="opc-order-success" style="display: none;">
+    <div class="opc-success-icon">✓</div>
+    <h2>{l s='Ordine confermato!' mod='onepagecheckout'}</h2>
+    <p>{l s='Il tuo ordine è stato registrato con successo.' mod='onepagecheckout'}</p>
+    <p class="opc-order-ref">{l s='Riferimento ordine' mod='onepagecheckout'}: <strong id="opc-order-reference"></strong></p>
+    <a href="{$urls.pages.history}" class="opc-btn opc-btn-confirm">{l s='Vedi i tuoi ordini' mod='onepagecheckout'}</a>
 </div>
 {/block}

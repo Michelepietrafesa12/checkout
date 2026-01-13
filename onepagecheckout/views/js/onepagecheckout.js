@@ -1,6 +1,6 @@
 /**
  * One Page Checkout - PlusPower Style
- * Unified checkout JavaScript
+ * Unified checkout JavaScript with inline payment support
  */
 
 (function() {
@@ -20,6 +20,7 @@
         bindEvents();
         initCompanyFields();
         initAddressSelector();
+        initPaymentForms();
     }
 
     function bindEvents() {
@@ -80,6 +81,12 @@
 
         // Toast close
         on('.opc-toast-close', 'click', hideToast);
+
+        // Payment frame close
+        on('#opc-payment-frame-close', 'click', closePaymentFrame);
+
+        // Listen for payment completion messages from iframe
+        window.addEventListener('message', handlePaymentMessage);
     }
 
     // Company fields visibility
@@ -319,16 +326,26 @@
         });
     }
 
-    // Payment selection
+    // Payment selection and forms
+    function initPaymentForms() {
+        // Initialize visibility of payment forms/info
+        handlePaymentSelect({ target: document.querySelector('input[name="payment_module"]:checked') });
+    }
+
     function handlePaymentSelect(e) {
-        // Show/hide payment forms
-        document.querySelectorAll('.opc-payment-form').forEach(function(el) {
+        if (!e.target) return;
+
+        // Hide all payment info and forms
+        document.querySelectorAll('.opc-payment-info, .opc-payment-form-container').forEach(function(el) {
             el.style.display = 'none';
         });
 
+        // Show selected payment's info and form
         var option = e.target.closest('.opc-payment-option');
         if (option) {
-            var form = option.querySelector('.opc-payment-form');
+            var info = option.querySelector('.opc-payment-info');
+            var form = option.querySelector('.opc-payment-form-container');
+            if (info) info.style.display = 'block';
             if (form) form.style.display = 'block';
         }
     }
@@ -348,7 +365,6 @@
                 updateTotals(response.cart_summary);
                 setValue('#discount_code', '');
                 showToast('Codice sconto applicato', 'success');
-                // Reload to show applied discount
                 window.location.reload();
             } else {
                 showToast(response.error || 'Codice non valido', 'error');
@@ -365,7 +381,6 @@
             hideLoading();
             if (response.success) {
                 updateTotals(response.cart_summary);
-                // Remove from DOM
                 var el = e.target.closest('.opc-applied-discount');
                 if (el) el.remove();
             }
@@ -382,7 +397,7 @@
         setTextIfExists('#opc-total', summary.total_formatted);
     }
 
-    // Form submission
+    // Form submission - Main checkout handler
     function handleSubmit() {
         if (OPC.isProcessing) return;
 
@@ -398,7 +413,7 @@
 
         // Save all data first
         saveAllData(function() {
-            processCheckout();
+            createOrder();
         });
     }
 
@@ -431,7 +446,8 @@
         return errors;
     }
 
-    function processCheckout() {
+    // Create order and handle payment
+    function createOrder() {
         var paymentRadio = document.querySelector('input[name="payment_module"]:checked');
         var termsCheckbox = document.getElementById('terms-and-conditions');
 
@@ -441,16 +457,106 @@
             order_message: getValue('#order_message')
         };
 
-        ajax('processCheckout', data, function(response) {
+        ajax('createOrder', data, function(response) {
             hideLoading();
             OPC.isProcessing = false;
 
-            if (response.success && response.payment_url) {
-                window.location.href = response.payment_url;
-            } else {
+            if (!response.success) {
                 showToast(response.error || 'Errore durante il checkout', 'error');
+                return;
+            }
+
+            if (response.order_created) {
+                // Order was created (offline payment like wire transfer, COD)
+                showOrderSuccess(response.order_reference);
+            } else if (response.use_iframe && response.payment_url) {
+                // Online payment - open in iframe
+                openPaymentFrame(response.payment_url);
+            } else if (response.payment_url) {
+                // Fallback - redirect to payment page
+                window.location.href = response.payment_url;
             }
         });
+    }
+
+    // Payment frame handling
+    function openPaymentFrame(url) {
+        var container = document.getElementById('opc-payment-frame-container');
+        var iframe = document.getElementById('opc-payment-frame');
+
+        if (container && iframe) {
+            iframe.src = url;
+            container.style.display = 'flex';
+        } else {
+            // Fallback to redirect
+            window.location.href = url;
+        }
+    }
+
+    function closePaymentFrame() {
+        var container = document.getElementById('opc-payment-frame-container');
+        var iframe = document.getElementById('opc-payment-frame');
+
+        if (container) {
+            container.style.display = 'none';
+        }
+        if (iframe) {
+            iframe.src = '';
+        }
+    }
+
+    // Listen for messages from payment iframe (for payment completion)
+    function handlePaymentMessage(event) {
+        // Check if message is from our payment frame
+        if (event.data && event.data.type === 'opc_payment_complete') {
+            closePaymentFrame();
+
+            if (event.data.success) {
+                showOrderSuccess(event.data.order_reference);
+            } else {
+                showToast(event.data.error || 'Pagamento fallito', 'error');
+            }
+        }
+
+        // Handle redirect URL from iframe
+        if (event.data && event.data.type === 'opc_redirect') {
+            closePaymentFrame();
+            window.location.href = event.data.url;
+        }
+    }
+
+    // Show order success
+    function showOrderSuccess(orderReference) {
+        var successEl = document.getElementById('opc-order-success');
+        var refEl = document.getElementById('opc-order-reference');
+
+        if (successEl) {
+            if (refEl && orderReference) {
+                refEl.textContent = orderReference;
+            }
+            successEl.style.display = 'flex';
+
+            // Hide checkout container
+            var checkoutContainer = document.querySelector('.opc-checkout-container');
+            if (checkoutContainer) {
+                checkoutContainer.style.display = 'none';
+            }
+        }
+    }
+
+    // Submit inline payment form
+    function submitPaymentForm(paymentModule) {
+        var paymentOption = document.querySelector('.opc-payment-option[data-module="' + paymentModule + '"]');
+        if (!paymentOption) return false;
+
+        var form = paymentOption.querySelector('.opc-payment-form-container form');
+        if (form) {
+            // Submit the payment form
+            form.submit();
+            return true;
+        }
+
+        return false;
     }
 
     // AJAX helper
