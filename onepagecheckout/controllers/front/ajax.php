@@ -4,6 +4,50 @@
  * Handles all dynamic operations without page reload
  */
 
+// Include checkout session class if not already defined
+if (!class_exists('OpcCheckoutSession')) {
+    class OpcCheckoutSession
+    {
+        public $cart;
+        public $customer;
+        public $language;
+        public $currency;
+
+        public function __construct($cart, $customer, $language, $currency)
+        {
+            $this->cart = $cart;
+            $this->customer = $customer;
+            $this->language = $language;
+            $this->currency = $currency;
+        }
+
+        public function getCart()
+        {
+            return $this->cart;
+        }
+
+        public function getCustomer()
+        {
+            return $this->customer;
+        }
+
+        public function getLanguage()
+        {
+            return $this->language;
+        }
+
+        public function getCurrency()
+        {
+            return $this->currency;
+        }
+
+        public function getCheckoutProcess()
+        {
+            return null;
+        }
+    }
+}
+
 class OnePageCheckoutAjaxModuleFrontController extends ModuleFrontController
 {
     public $ssl = true;
@@ -876,12 +920,12 @@ class OnePageCheckoutAjaxModuleFrontController extends ModuleFrontController
 
     protected function buildCheckoutSession()
     {
-        return (object)[
-            'cart' => $this->context->cart,
-            'language' => $this->context->language,
-            'currency' => $this->context->currency,
-            'customer' => $this->context->customer,
-        ];
+        return new OpcCheckoutSession(
+            $this->context->cart,
+            $this->context->customer,
+            $this->context->language,
+            $this->context->currency
+        );
     }
 
     protected function getCartSummaryData()

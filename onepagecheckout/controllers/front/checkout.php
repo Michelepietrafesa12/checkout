@@ -4,6 +4,51 @@
  * Unified checkout page - PlusPower style
  */
 
+/**
+ * Simple checkout session object for payment modules
+ * Provides the interface that payment modules expect
+ */
+class OpcCheckoutSession
+{
+    public $cart;
+    public $customer;
+    public $language;
+    public $currency;
+
+    public function __construct($cart, $customer, $language, $currency)
+    {
+        $this->cart = $cart;
+        $this->customer = $customer;
+        $this->language = $language;
+        $this->currency = $currency;
+    }
+
+    public function getCart()
+    {
+        return $this->cart;
+    }
+
+    public function getCustomer()
+    {
+        return $this->customer;
+    }
+
+    public function getLanguage()
+    {
+        return $this->language;
+    }
+
+    public function getCurrency()
+    {
+        return $this->currency;
+    }
+
+    public function getCheckoutProcess()
+    {
+        return null;
+    }
+}
+
 class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
 {
     public $ssl = true;
@@ -369,19 +414,36 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
             // Check if module has getPaymentOptions method (PS 1.7+)
             if (method_exists($module, 'getPaymentOptions')) {
                 try {
-                    $options = $module->getPaymentOptions($this->buildCheckoutSession());
+                    $checkout_session = $this->buildCheckoutSession();
+                    $options = $module->getPaymentOptions($checkout_session);
                     if (is_array($options)) {
                         foreach ($options as $option) {
+                            $additional_info = '';
+                            if (method_exists($option, 'getAdditionalInformation')) {
+                                $additional_info = $option->getAdditionalInformation();
+                            }
+
                             $payment_options[] = [
                                 'module_name' => $module_info['name'],
                                 'call_to_action_text' => $option->getCallToActionText(),
                                 'logo' => $option->getLogo(),
                                 'action' => $option->getAction(),
                                 'form' => $option->getForm(),
+                                'additional_information' => $additional_info,
+                                'binary' => method_exists($option, 'isBinary') ? $option->isBinary() : false,
                             ];
                         }
                     }
                 } catch (Exception $e) {
+                    // Log error for debugging
+                    PrestaShopLogger::addLog(
+                        'OPC Payment Error: ' . $module_info['name'] . ' - ' . $e->getMessage(),
+                        2,
+                        null,
+                        'Module',
+                        null,
+                        true
+                    );
                     continue;
                 }
             }
@@ -392,13 +454,14 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
 
     protected function buildCheckoutSession()
     {
-        // Build a minimal checkout session that payment modules expect
-        return (object)[
-            'cart' => $this->context->cart,
-            'language' => $this->context->language,
-            'currency' => $this->context->currency,
-            'customer' => $this->context->customer,
-        ];
+        // Return a simple object with the required properties
+        // Payment modules access these via magic methods or direct properties
+        return new OpcCheckoutSession(
+            $this->context->cart,
+            $this->context->customer,
+            $this->context->language,
+            $this->context->currency
+        );
     }
 
     protected function getMonthsList()

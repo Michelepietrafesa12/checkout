@@ -2,140 +2,188 @@
  * One Page Checkout - PlusPower Style
  */
 
-/* Base */
+/* Reset and Base - High specificity to override theme */
+#content.opc-checkout-container,
 .opc-checkout-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-size: 14px;
-    color: #333;
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 20px !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-size: 14px !important;
+    color: #333 !important;
+    background: #f5f5f5 !important;
+    float: none !important;
+    width: 100% !important;
 }
 
-.opc-checkout-container * {
-    box-sizing: border-box;
+.opc-checkout-container *,
+.opc-checkout-container *::before,
+.opc-checkout-container *::after {
+    box-sizing: border-box !important;
 }
 
 /* Title */
-.opc-title {
-    text-align: center;
-    font-size: 24px;
-    font-weight: 700;
-    color: #333;
-    margin: 0 0 30px 0;
-    text-transform: uppercase;
-    letter-spacing: 2px;
+.opc-checkout-container .opc-title {
+    text-align: center !important;
+    font-size: 24px !important;
+    font-weight: 700 !important;
+    color: #333 !important;
+    margin: 0 0 30px 0 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 2px !important;
+    padding: 0 !important;
+    border: none !important;
+    background: none !important;
 }
 
-/* Two Column Layout */
-.opc-row {
-    display: flex;
-    gap: 30px;
+/* Two Column Layout - Force flex */
+.opc-checkout-container .opc-row {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    gap: 30px !important;
+    align-items: flex-start !important;
 }
 
-.opc-col-left {
-    flex: 1;
-    max-width: 650px;
+.opc-checkout-container .opc-col-left {
+    flex: 1 1 auto !important;
+    max-width: 650px !important;
+    min-width: 0 !important;
+    float: none !important;
+    width: auto !important;
 }
 
-.opc-col-right {
-    flex: 0 0 420px;
+.opc-checkout-container .opc-col-right {
+    flex: 0 0 400px !important;
+    max-width: 400px !important;
+    min-width: 350px !important;
+    float: none !important;
+    width: 400px !important;
 }
 
 @media (max-width: 992px) {
-    .opc-row {
-        flex-direction: column;
+    .opc-checkout-container .opc-row {
+        flex-direction: column !important;
+        flex-wrap: wrap !important;
     }
-    .opc-col-left, .opc-col-right {
-        max-width: 100%;
-        flex: 1;
+    .opc-checkout-container .opc-col-left,
+    .opc-checkout-container .opc-col-right {
+        max-width: 100% !important;
+        min-width: 100% !important;
+        flex: 1 1 100% !important;
+        width: 100% !important;
     }
 }
 
 /* Sections */
-.opc-section {
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    padding: 25px;
-    margin-bottom: 20px;
+.opc-checkout-container .opc-section {
+    background: #fff !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 4px !important;
+    padding: 25px !important;
+    margin-bottom: 20px !important;
+    float: none !important;
+    display: block !important;
 }
 
-.opc-section-compact {
-    padding: 20px;
+.opc-checkout-container .opc-section-compact {
+    padding: 20px !important;
 }
 
-.opc-section-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #333;
-    margin: 0 0 20px 0;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #c8e600;
+.opc-checkout-container .opc-section-title {
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #333 !important;
+    margin: 0 0 20px 0 !important;
+    padding-bottom: 10px !important;
+    border-bottom: 2px solid #c8e600 !important;
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    background: none !important;
 }
 
 /* Form Elements */
-.opc-form {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
+.opc-checkout-container .opc-form {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 18px !important;
 }
 
-.opc-form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+.opc-checkout-container .opc-form-group {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    margin-bottom: 0 !important;
 }
 
-.opc-form-group label {
-    font-size: 11px;
-    font-weight: 500;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+.opc-checkout-container .opc-form-group > label {
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    color: #888 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    margin-bottom: 0 !important;
 }
 
-.opc-optional {
-    display: block;
-    font-size: 10px;
-    font-weight: 400;
-    color: #999;
-    text-transform: none;
-    margin-top: 2px;
+.opc-checkout-container .opc-optional {
+    display: block !important;
+    font-size: 10px !important;
+    font-weight: 400 !important;
+    color: #999 !important;
+    text-transform: none !important;
+    margin-top: 2px !important;
 }
 
-.opc-input,
-.opc-select,
-.opc-textarea {
-    width: 100%;
-    padding: 12px 14px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    color: #333;
-    background: #fff;
-    transition: border-color 0.2s;
+.opc-checkout-container .opc-input,
+.opc-checkout-container .opc-select,
+.opc-checkout-container .opc-textarea,
+.opc-checkout-container input[type="text"],
+.opc-checkout-container input[type="email"],
+.opc-checkout-container input[type="tel"],
+.opc-checkout-container input[type="password"],
+.opc-checkout-container select,
+.opc-checkout-container textarea {
+    width: 100% !important;
+    padding: 12px 14px !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+    font-size: 14px !important;
+    color: #333 !important;
+    background: #fff !important;
+    transition: border-color 0.2s !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+    box-shadow: none !important;
 }
 
-.opc-input:focus,
-.opc-select:focus,
-.opc-textarea:focus {
-    outline: none;
-    border-color: #c8e600;
+.opc-checkout-container .opc-input:focus,
+.opc-checkout-container .opc-select:focus,
+.opc-checkout-container .opc-textarea:focus,
+.opc-checkout-container input:focus,
+.opc-checkout-container select:focus,
+.opc-checkout-container textarea:focus {
+    outline: none !important;
+    border-color: #c8e600 !important;
+    box-shadow: none !important;
 }
 
-.opc-select {
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%23666' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    padding-right: 35px;
-    cursor: pointer;
+.opc-checkout-container .opc-select,
+.opc-checkout-container select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%23666' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 14px center !important;
+    padding-right: 35px !important;
+    cursor: pointer !important;
 }
 
-.opc-textarea {
-    min-height: 80px;
-    resize: vertical;
+.opc-checkout-container .opc-textarea,
+.opc-checkout-container textarea {
+    min-height: 80px !important;
+    resize: vertical !important;
 }
 
 /* Birthday Selects */
