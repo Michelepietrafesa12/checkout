@@ -1,641 +1,465 @@
 /**
- * One Page Checkout JavaScript
- * Handles all checkout interactions without page reload
+ * One Page Checkout - PlusPower Style
+ * Unified checkout JavaScript
  */
 
 (function() {
     'use strict';
 
-    // Configuration
     const OPC = {
         ajaxUrl: typeof opc_ajax_url !== 'undefined' ? opc_ajax_url : '',
         token: typeof opc_token !== 'undefined' ? opc_token : '',
-        texts: typeof opc_texts !== 'undefined' ? opc_texts : {},
-        debounceTimer: null,
+        saveTimer: null,
         isProcessing: false
     };
 
-    // DOM Ready
-    document.addEventListener('DOMContentLoaded', function() {
-        initEventListeners();
-        initFormValidation();
-        checkInitialState();
-    });
+    // Initialize on DOM ready
+    document.addEventListener('DOMContentLoaded', init);
 
-    /**
-     * Initialize all event listeners
-     */
-    function initEventListeners() {
-        // Login toggle
-        const showLoginBtn = document.getElementById('opc-show-login');
-        if (showLoginBtn) {
-            showLoginBtn.addEventListener('click', toggleLoginForm);
-        }
+    function init() {
+        bindEvents();
+        initCompanyFields();
+        initAddressSelector();
+    }
 
-        // Login submit
-        const loginBtn = document.getElementById('opc-login-btn');
-        if (loginBtn) {
-            loginBtn.addEventListener('click', handleLogin);
-        }
-
+    function bindEvents() {
         // Customer type change
-        const customerType = document.getElementById('customer_type');
-        if (customerType) {
-            customerType.addEventListener('change', handleCustomerTypeChange);
-        }
+        on('#customer_type', 'change', handleCustomerType);
 
         // Invoice checkbox
-        const wantsInvoice = document.getElementById('wants_invoice');
-        if (wantsInvoice) {
-            wantsInvoice.addEventListener('change', handleInvoiceChange);
-        }
+        on('#wants_invoice', 'change', handleInvoiceToggle);
 
-        // Address selection
-        const selectAddress = document.getElementById('select_address');
-        if (selectAddress) {
-            selectAddress.addEventListener('change', handleAddressSelection);
-        }
+        // Email blur - check if exists
+        on('#email', 'blur', handleEmailCheck);
 
-        // Different billing address
-        const differentBilling = document.getElementById('different_billing');
-        if (differentBilling) {
-            differentBilling.addEventListener('change', toggleBillingAddress);
-        }
+        // Show login form
+        on('#opc-show-login', 'click', function(e) {
+            e.preventDefault();
+            show('#opc-login-inline');
+        });
+
+        // Login button
+        on('#opc-login-btn', 'click', handleLogin);
+
+        // Address selector
+        on('#select_address', 'change', handleAddressSelect);
+
+        // Form fields auto-save
+        document.querySelectorAll('#opc-checkout-form input, #opc-checkout-form select').forEach(function(el) {
+            el.addEventListener('change', debouncedSave);
+            el.addEventListener('blur', debouncedSave);
+        });
+
+        // Country change - update carriers
+        on('#id_country', 'change', function() {
+            saveAllData(function() {
+                refreshCarriers();
+            });
+        });
 
         // Carrier selection
-        document.querySelectorAll('input[name="id_carrier"]').forEach(function(radio) {
-            radio.addEventListener('change', handleCarrierChange);
+        document.querySelectorAll('input[name="id_carrier"]').forEach(function(el) {
+            el.addEventListener('change', handleCarrierSelect);
         });
 
         // Payment selection
-        document.querySelectorAll('input[name="payment_module"]').forEach(function(radio) {
-            radio.addEventListener('change', handlePaymentChange);
+        document.querySelectorAll('input[name="payment_module"]').forEach(function(el) {
+            el.addEventListener('change', handlePaymentSelect);
         });
 
-        // Discount code
-        const applyDiscountBtn = document.getElementById('opc-apply-discount');
-        if (applyDiscountBtn) {
-            applyDiscountBtn.addEventListener('click', handleApplyDiscount);
-        }
+        // Apply discount
+        on('#opc-apply-discount', 'click', handleApplyDiscount);
+
+        // Remove discount
+        document.querySelectorAll('.opc-remove-discount').forEach(function(el) {
+            el.addEventListener('click', handleRemoveDiscount);
+        });
 
         // Submit order
-        const submitBtn = document.getElementById('opc-submit-order');
-        if (submitBtn) {
-            submitBtn.addEventListener('click', handleSubmitOrder);
-        }
+        on('#opc-submit-order', 'click', handleSubmit);
 
-        // Form field blur events for auto-save
-        document.querySelectorAll('#opc-personal-form input, #opc-address-form input').forEach(function(input) {
-            input.addEventListener('blur', debounceAutoSave);
-        });
+        // Toast close
+        on('.opc-toast-close', 'click', hideToast);
+    }
 
-        // Country change to update carriers
-        const countrySelect = document.getElementById('id_country');
-        if (countrySelect) {
-            countrySelect.addEventListener('change', handleCountryChange);
-        }
+    // Company fields visibility
+    function initCompanyFields() {
+        handleCustomerType();
+        handleInvoiceToggle();
+    }
 
-        // Email check for existing account
-        const emailInput = document.getElementById('email');
-        if (emailInput) {
-            emailInput.addEventListener('blur', checkEmailExists);
-        }
-
-        // Modal close
-        const modalClose = document.querySelector('.opc-modal-close');
-        if (modalClose) {
-            modalClose.addEventListener('click', closeErrorModal);
-        }
-
-        // Close modal on outside click
-        const modal = document.getElementById('opc-error-modal');
-        if (modal) {
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    closeErrorModal();
-                }
-            });
+    function handleCustomerType() {
+        var type = getValue('#customer_type');
+        var companyFields = document.getElementById('opc-company-fields');
+        if (companyFields) {
+            if (type === 'company') {
+                companyFields.classList.add('visible');
+            } else if (!isChecked('#wants_invoice')) {
+                companyFields.classList.remove('visible');
+            }
         }
     }
 
-    /**
-     * Initialize form validation
-     */
-    function initFormValidation() {
-        // Real-time validation on required fields
-        document.querySelectorAll('.opc-input[required], .opc-select[required]').forEach(function(field) {
-            field.addEventListener('invalid', function(e) {
-                e.preventDefault();
-                showFieldError(field, OPC.texts.error_required || 'Questo campo è obbligatorio');
-            });
+    function handleInvoiceToggle() {
+        var companyFields = document.getElementById('opc-company-fields');
+        if (companyFields) {
+            if (isChecked('#wants_invoice') || getValue('#customer_type') === 'company') {
+                companyFields.classList.add('visible');
+            } else {
+                companyFields.classList.remove('visible');
+            }
+        }
+    }
 
-            field.addEventListener('input', function() {
-                clearFieldError(field);
-            });
+    // Email check for existing account
+    function handleEmailCheck() {
+        var email = getValue('#email');
+        if (!email || !isValidEmail(email)) return;
+
+        ajax('checkEmail', { email: email }, function(response) {
+            if (response.success && response.exists) {
+                show('#opc-login-prompt');
+            } else {
+                hide('#opc-login-prompt');
+                hide('#opc-login-inline');
+            }
         });
     }
 
-    /**
-     * Check initial state and show/hide sections
-     */
-    function checkInitialState() {
-        handleCustomerTypeChange();
-        handleInvoiceChange();
-    }
-
-    /**
-     * Toggle login form visibility
-     */
-    function toggleLoginForm() {
-        const loginForm = document.getElementById('opc-login-form');
-        if (loginForm) {
-            loginForm.style.display = loginForm.style.display === 'none' ? 'block' : 'none';
-        }
-    }
-
-    /**
-     * Handle login submission
-     */
+    // Login
     function handleLogin() {
-        const email = document.getElementById('login_email').value;
-        const password = document.getElementById('login_password').value;
+        var email = getValue('#email');
+        var password = getValue('#login_password');
 
         if (!email || !password) {
-            showError('Inserisci email e password');
+            showToast('Inserisci email e password', 'error');
             return;
         }
 
         showLoading();
-
-        ajaxRequest('loginCustomer', {
-            email: email,
-            password: password
-        }, function(response) {
+        ajax('loginCustomer', { email: email, password: password }, function(response) {
             hideLoading();
             if (response.success) {
-                if (response.reload) {
-                    window.location.reload();
-                }
+                window.location.reload();
             } else {
-                showError(response.error);
+                showToast(response.error || 'Login fallito', 'error');
             }
         });
     }
 
-    /**
-     * Handle customer type change (private/company)
-     */
-    function handleCustomerTypeChange() {
-        const customerType = document.getElementById('customer_type');
-        const companyFields = document.getElementById('opc-company-fields');
-
-        if (customerType && companyFields) {
-            companyFields.style.display = customerType.value === 'company' ? 'block' : 'none';
+    // Address selector for logged users
+    function initAddressSelector() {
+        var selector = document.getElementById('select_address');
+        if (selector && selector.value) {
+            fillAddressFromSelector(selector.value);
         }
     }
 
-    /**
-     * Handle invoice checkbox change
-     */
-    function handleInvoiceChange() {
-        const wantsInvoice = document.getElementById('wants_invoice');
-        const companyFields = document.getElementById('opc-company-fields');
-        const customerType = document.getElementById('customer_type');
+    function handleAddressSelect() {
+        var selector = document.getElementById('select_address');
+        if (!selector) return;
 
-        if (wantsInvoice && companyFields) {
-            if (wantsInvoice.checked || (customerType && customerType.value === 'company')) {
-                companyFields.style.display = 'block';
-            } else if (customerType && customerType.value !== 'company') {
-                companyFields.style.display = 'none';
-            }
-        }
-    }
-
-    /**
-     * Handle existing address selection
-     */
-    function handleAddressSelection() {
-        const selectAddress = document.getElementById('select_address');
-        const addressForm = document.getElementById('opc-address-form');
-
-        if (!selectAddress) return;
-
-        const idAddress = selectAddress.value;
-
-        if (idAddress) {
-            // Hide form and select existing address
-            if (addressForm) {
-                addressForm.style.display = 'none';
-            }
-
+        var addressId = selector.value;
+        if (addressId) {
+            fillAddressFromSelector(addressId);
             showLoading();
-
-            ajaxRequest('selectAddress', {
-                id_address: idAddress,
-                address_type: 'delivery'
-            }, function(response) {
+            ajax('selectAddress', { id_address: addressId, address_type: 'both' }, function(response) {
                 hideLoading();
                 if (response.success) {
                     updateCarriers(response.carriers);
-                    updateCartSummary(response.cart_summary);
-                } else {
-                    showError(response.error);
+                    updateTotals(response.cart_summary);
                 }
             });
-        } else {
-            // Show form for new address
-            if (addressForm) {
-                addressForm.style.display = 'block';
-            }
         }
     }
 
-    /**
-     * Toggle billing address section
-     */
-    function toggleBillingAddress() {
-        const differentBilling = document.getElementById('different_billing');
-        const billingSection = document.getElementById('opc-billing-address');
+    function fillAddressFromSelector(addressId) {
+        var selector = document.getElementById('select_address');
+        if (!selector) return;
 
-        if (differentBilling && billingSection) {
-            billingSection.style.display = differentBilling.checked ? 'block' : 'none';
+        var option = selector.querySelector('option[value="' + addressId + '"]');
+        if (!option) return;
+
+        try {
+            var data = JSON.parse(option.getAttribute('data-address'));
+            if (data) {
+                setValueIfExists('#address1', data.address1);
+                setValueIfExists('#address2', data.address2);
+                setValueIfExists('#postcode', data.postcode);
+                setValueIfExists('#city', data.city);
+                setValueIfExists('#id_country', data.id_country);
+                setValueIfExists('#phone', data.phone);
+                setValueIfExists('#phone_mobile', data.phone_mobile);
+                setValueIfExists('#company', data.company);
+                setValueIfExists('#vat_number', data.vat_number);
+            }
+        } catch (e) {
+            // Ignore JSON parse errors
         }
     }
 
-    /**
-     * Handle carrier selection change
-     */
-    function handleCarrierChange(e) {
-        const idCarrier = e.target.value;
-
-        showLoading();
-
-        ajaxRequest('updateCarrier', {
-            id_carrier: idCarrier
-        }, function(response) {
-            hideLoading();
-            if (response.success) {
-                updateCartSummary(response.cart_summary);
-            } else {
-                showError(response.error);
-            }
-        });
+    // Auto-save with debounce
+    function debouncedSave() {
+        if (OPC.saveTimer) clearTimeout(OPC.saveTimer);
+        OPC.saveTimer = setTimeout(function() {
+            saveAllData();
+        }, 800);
     }
 
-    /**
-     * Handle payment method selection
-     */
-    function handlePaymentChange(e) {
-        // Show/hide additional payment forms
-        document.querySelectorAll('.opc-payment-option').forEach(function(option) {
-            const form = option.querySelector('.opc-payment-form');
-            const info = option.querySelector('.opc-payment-info-extra');
-            const radio = option.querySelector('input[type="radio"]');
-
-            if (form) {
-                form.style.display = radio && radio.checked ? 'block' : 'none';
-            }
-            if (info) {
-                info.style.display = radio && radio.checked ? 'block' : 'none';
-            }
-        });
-    }
-
-    /**
-     * Handle country change
-     */
-    function handleCountryChange() {
-        // Save address and update carriers
-        saveAddress(function(response) {
-            if (response.success) {
-                updateCarriers(response.carriers);
-                updateCartSummary(response.cart_summary);
-            }
-        });
-    }
-
-    /**
-     * Check if email exists
-     */
-    function checkEmailExists() {
-        const emailInput = document.getElementById('email');
-        if (!emailInput || !emailInput.value) return;
-
-        ajaxRequest('checkEmail', {
-            email: emailInput.value
-        }, function(response) {
-            if (response.success && response.exists) {
-                showFieldError(emailInput, 'Questa email è già registrata. Effettua il login.');
-                toggleLoginForm();
-                document.getElementById('login_email').value = emailInput.value;
-            }
-        });
-    }
-
-    /**
-     * Handle apply discount code
-     */
-    function handleApplyDiscount() {
-        const discountInput = document.getElementById('discount_code');
-        const code = discountInput ? discountInput.value.trim() : '';
-
-        if (!code) {
-            showError('Inserisci un codice sconto');
-            return;
-        }
-
-        showLoading();
-
-        ajaxRequest('applyDiscount', {
-            discount_code: code
-        }, function(response) {
-            hideLoading();
-            if (response.success) {
-                updateCartSummary(response.cart_summary);
-                if (discountInput) {
-                    discountInput.value = '';
-                }
-            } else {
-                showError(response.error);
-            }
-        });
-    }
-
-    /**
-     * Debounced auto-save for form fields
-     */
-    function debounceAutoSave() {
-        if (OPC.debounceTimer) {
-            clearTimeout(OPC.debounceTimer);
-        }
-
-        OPC.debounceTimer = setTimeout(function() {
-            autoSaveData();
-        }, 1000);
-    }
-
-    /**
-     * Auto-save customer and address data
-     */
-    function autoSaveData() {
-        // First save customer info
-        saveCustomerInfo(function(customerResponse) {
-            if (customerResponse.success) {
-                // Then save address
-                saveAddress(function(addressResponse) {
-                    if (addressResponse.success && addressResponse.carriers) {
-                        updateCarriers(addressResponse.carriers);
-                        updateCartSummary(addressResponse.cart_summary);
-                    }
-                });
-            }
-        });
-    }
-
-    /**
-     * Save customer information
-     */
-    function saveCustomerInfo(callback) {
-        const formData = {
-            firstname: getValue('firstname'),
-            lastname: getValue('lastname'),
-            email: getValue('email'),
-            birthday_day: getValue('birthday_day'),
-            birthday_month: getValue('birthday_month'),
-            birthday_year: getValue('birthday_year'),
-            phone: getValue('phone'),
-            phone_mobile: getValue('phone_mobile'),
-            customer_type: getValue('customer_type'),
-            wants_invoice: getCheckboxValue('wants_invoice'),
-            company: getValue('company'),
-            vat_number: getValue('vat_number')
+    function saveAllData(callback) {
+        var customerData = {
+            firstname: getValue('#firstname'),
+            lastname: getValue('#lastname'),
+            email: getValue('#email'),
+            birthday_day: getValue('#birthday_day'),
+            birthday_month: getValue('#birthday_month'),
+            birthday_year: getValue('#birthday_year'),
+            phone: getValue('#phone'),
+            phone_mobile: getValue('#phone_mobile'),
+            customer_type: getValue('#customer_type'),
+            wants_invoice: isChecked('#wants_invoice') ? 1 : 0,
+            company: getValue('#company'),
+            vat_number: getValue('#vat_number')
         };
 
-        // Validate required fields
-        if (!formData.firstname || !formData.lastname) {
-            if (callback) callback({ success: false, error: 'Nome e cognome sono obbligatori' });
+        // Only save if we have minimum data
+        if (!customerData.firstname || !customerData.lastname) {
+            if (callback) callback();
             return;
         }
 
-        if (!document.querySelector('.opc-login-section') && !formData.email) {
-            // Email required only for guests
-        }
-
-        ajaxRequest('saveCustomerInfo', formData, callback);
+        ajax('saveCustomerInfo', customerData, function(response) {
+            if (response.success) {
+                saveAddress(callback);
+            } else if (callback) {
+                callback();
+            }
+        });
     }
 
-    /**
-     * Save address information
-     */
     function saveAddress(callback) {
-        const formData = {
-            address1: getValue('address1'),
-            address2: getValue('address2'),
-            postcode: getValue('postcode'),
-            city: getValue('city'),
-            id_country: getValue('id_country'),
-            phone: getValue('phone'),
-            phone_mobile: getValue('phone_mobile'),
-            company: getValue('company'),
-            vat_number: getValue('vat_number'),
+        var addressData = {
+            address1: getValue('#address1'),
+            address2: getValue('#address2'),
+            postcode: getValue('#postcode'),
+            city: getValue('#city'),
+            id_country: getValue('#id_country'),
+            phone: getValue('#phone'),
+            phone_mobile: getValue('#phone_mobile'),
+            company: getValue('#company'),
+            vat_number: getValue('#vat_number'),
             address_type: 'both'
         };
 
-        // Check if we have minimum address data
-        if (!formData.address1 || !formData.postcode || !formData.city) {
-            if (callback) callback({ success: false, error: 'Completa l\'indirizzo' });
+        // Only save if we have minimum address data
+        if (!addressData.address1 || !addressData.postcode || !addressData.city) {
+            if (callback) callback();
             return;
         }
 
-        ajaxRequest('saveAddress', formData, callback);
+        ajax('saveAddress', addressData, function(response) {
+            if (response.success) {
+                updateCarriers(response.carriers);
+                updateTotals(response.cart_summary);
+            }
+            if (callback) callback();
+        });
     }
 
-    /**
-     * Handle order submission
-     */
-    function handleSubmitOrder() {
+    // Carrier selection
+    function handleCarrierSelect(e) {
+        var carrierId = e.target.value;
+
+        // Update visual state
+        document.querySelectorAll('.opc-carrier-option').forEach(function(el) {
+            el.classList.remove('selected');
+        });
+        e.target.closest('.opc-carrier-option').classList.add('selected');
+
+        showLoading();
+        ajax('updateCarrier', { id_carrier: carrierId }, function(response) {
+            hideLoading();
+            if (response.success) {
+                updateTotals(response.cart_summary);
+            }
+        });
+    }
+
+    function refreshCarriers() {
+        ajax('getCarriers', {}, function(response) {
+            if (response.success) {
+                updateCarriers(response.carriers);
+            }
+        });
+    }
+
+    function updateCarriers(carriers) {
+        var container = document.getElementById('opc-carriers-list');
+        if (!container || !carriers) return;
+
+        if (carriers.length === 0) {
+            container.innerHTML = '<p class="opc-message">Completa l\'indirizzo per vedere le opzioni di spedizione</p>';
+            return;
+        }
+
+        var html = '';
+        carriers.forEach(function(carrier) {
+            html += '<label class="opc-carrier-option ' + (carrier.selected ? 'selected' : '') + '">';
+            html += '<input type="radio" name="id_carrier" value="' + carrier.id_carrier + '"' + (carrier.selected ? ' checked' : '') + ' />';
+            html += '<span class="opc-carrier-name">' + carrier.name + '</span>';
+            html += '<span class="opc-carrier-price">' + carrier.price_formatted + '</span>';
+            html += '</label>';
+        });
+
+        container.innerHTML = html;
+
+        // Rebind events
+        document.querySelectorAll('input[name="id_carrier"]').forEach(function(el) {
+            el.addEventListener('change', handleCarrierSelect);
+        });
+    }
+
+    // Payment selection
+    function handlePaymentSelect(e) {
+        // Show/hide payment forms
+        document.querySelectorAll('.opc-payment-form').forEach(function(el) {
+            el.style.display = 'none';
+        });
+
+        var option = e.target.closest('.opc-payment-option');
+        if (option) {
+            var form = option.querySelector('.opc-payment-form');
+            if (form) form.style.display = 'block';
+        }
+    }
+
+    // Discount codes
+    function handleApplyDiscount() {
+        var code = getValue('#discount_code');
+        if (!code) {
+            showToast('Inserisci un codice sconto', 'error');
+            return;
+        }
+
+        showLoading();
+        ajax('applyDiscount', { discount_code: code }, function(response) {
+            hideLoading();
+            if (response.success) {
+                updateTotals(response.cart_summary);
+                setValue('#discount_code', '');
+                showToast('Codice sconto applicato', 'success');
+                // Reload to show applied discount
+                window.location.reload();
+            } else {
+                showToast(response.error || 'Codice non valido', 'error');
+            }
+        });
+    }
+
+    function handleRemoveDiscount(e) {
+        var id = e.target.getAttribute('data-id');
+        if (!id) return;
+
+        showLoading();
+        ajax('removeDiscount', { id_cart_rule: id }, function(response) {
+            hideLoading();
+            if (response.success) {
+                updateTotals(response.cart_summary);
+                // Remove from DOM
+                var el = e.target.closest('.opc-applied-discount');
+                if (el) el.remove();
+            }
+        });
+    }
+
+    // Update totals
+    function updateTotals(summary) {
+        if (!summary) return;
+
+        setTextIfExists('#opc-subtotal', summary.subtotal_formatted);
+        setTextIfExists('#opc-shipping-cost', summary.shipping_formatted);
+        setTextIfExists('#opc-discounts', '-' + summary.discounts_formatted);
+        setTextIfExists('#opc-total', summary.total_formatted);
+    }
+
+    // Form submission
+    function handleSubmit() {
         if (OPC.isProcessing) return;
 
-        // Validate all required fields
-        const errors = validateCheckout();
+        // Validate form
+        var errors = validateForm();
         if (errors.length > 0) {
-            showError(errors.join('<br>'));
+            showToast(errors[0], 'error');
             return;
         }
 
         OPC.isProcessing = true;
         showLoading();
 
-        // First save all data
-        saveCustomerInfo(function(customerResponse) {
-            if (!customerResponse.success) {
-                hideLoading();
-                OPC.isProcessing = false;
-                showError(customerResponse.error || customerResponse.errors.join('<br>'));
-                return;
-            }
-
-            saveAddress(function(addressResponse) {
-                if (!addressResponse.success) {
-                    hideLoading();
-                    OPC.isProcessing = false;
-                    showError(addressResponse.error || addressResponse.errors.join('<br>'));
-                    return;
-                }
-
-                // Process checkout
-                processCheckout();
-            });
+        // Save all data first
+        saveAllData(function() {
+            processCheckout();
         });
     }
 
-    /**
-     * Process final checkout
-     */
-    function processCheckout() {
-        const selectedPayment = document.querySelector('input[name="payment_module"]:checked');
-        const termsCheckbox = document.getElementById('terms-and-conditions');
+    function validateForm() {
+        var errors = [];
 
-        const formData = {
-            payment_module: selectedPayment ? selectedPayment.value : '',
-            terms_accepted: termsCheckbox ? termsCheckbox.checked : false,
-            order_message: getValue('order_message')
-        };
+        if (!getValue('#firstname')) errors.push('Il nome è obbligatorio');
+        if (!getValue('#lastname')) errors.push('Il cognome è obbligatorio');
 
-        ajaxRequest('processCheckout', formData, function(response) {
-            hideLoading();
-            OPC.isProcessing = false;
+        var emailField = document.getElementById('email');
+        if (emailField && !getValue('#email')) errors.push('L\'email è obbligatoria');
 
-            if (response.success) {
-                // Redirect to payment
-                if (response.payment_url) {
-                    window.location.href = response.payment_url;
-                }
-            } else {
-                showError(response.error);
-            }
-        });
-    }
+        if (!getValue('#address1')) errors.push('L\'indirizzo è obbligatorio');
+        if (!getValue('#postcode')) errors.push('Il CAP è obbligatorio');
+        if (!getValue('#city')) errors.push('La città è obbligatoria');
 
-    /**
-     * Validate checkout form
-     */
-    function validateCheckout() {
-        const errors = [];
-
-        // Check required personal fields
-        if (!getValue('firstname')) errors.push('Il nome è obbligatorio');
-        if (!getValue('lastname')) errors.push('Il cognome è obbligatorio');
-
-        // Check email for guests
-        const emailField = document.getElementById('email');
-        if (emailField && !emailField.value) {
-            errors.push('L\'email è obbligatoria');
-        }
-
-        // Check address
-        if (!getValue('address1')) errors.push('L\'indirizzo è obbligatorio');
-        if (!getValue('postcode')) errors.push('Il CAP è obbligatorio');
-        if (!getValue('city')) errors.push('La città è obbligatoria');
-
-        // Check carrier
-        const selectedCarrier = document.querySelector('input[name="id_carrier"]:checked');
-        if (!selectedCarrier) {
+        if (!document.querySelector('input[name="id_carrier"]:checked')) {
             errors.push('Seleziona un metodo di spedizione');
         }
 
-        // Check payment
-        const selectedPayment = document.querySelector('input[name="payment_module"]:checked');
-        if (!selectedPayment) {
+        if (!document.querySelector('input[name="payment_module"]:checked')) {
             errors.push('Seleziona un metodo di pagamento');
         }
 
-        // Check terms
-        const termsCheckbox = document.getElementById('terms-and-conditions');
-        if (termsCheckbox && !termsCheckbox.checked) {
-            errors.push('Devi accettare i termini e le condizioni');
+        var terms = document.getElementById('terms-and-conditions');
+        if (terms && !terms.checked) {
+            errors.push('Devi accettare i termini e condizioni');
         }
 
         return errors;
     }
 
-    /**
-     * Update carriers list
-     */
-    function updateCarriers(carriers) {
-        const carriersList = document.getElementById('opc-carriers-list');
-        if (!carriersList || !carriers) return;
+    function processCheckout() {
+        var paymentRadio = document.querySelector('input[name="payment_module"]:checked');
+        var termsCheckbox = document.getElementById('terms-and-conditions');
 
-        if (carriers.length === 0) {
-            carriersList.innerHTML = '<p class="opc-no-carriers">Nessun corriere disponibile per questo indirizzo</p>';
-            return;
-        }
+        var data = {
+            payment_module: paymentRadio ? paymentRadio.value : '',
+            terms_accepted: termsCheckbox ? termsCheckbox.checked : true,
+            order_message: getValue('#order_message')
+        };
 
-        let html = '';
-        carriers.forEach(function(carrier) {
-            html += `
-                <div class="opc-carrier-option">
-                    <label class="opc-radio-label">
-                        <input type="radio" name="id_carrier" value="${carrier.id_carrier}"
-                               ${carrier.selected ? 'checked' : ''} />
-                        <span class="opc-carrier-info">
-                            <span class="opc-carrier-name">${carrier.name}</span>
-                            <span class="opc-carrier-delay">${carrier.delay || ''}</span>
-                        </span>
-                        <span class="opc-carrier-price">${carrier.price_formatted}</span>
-                    </label>
-                </div>
-            `;
-        });
+        ajax('processCheckout', data, function(response) {
+            hideLoading();
+            OPC.isProcessing = false;
 
-        carriersList.innerHTML = html;
-
-        // Re-attach event listeners
-        document.querySelectorAll('input[name="id_carrier"]').forEach(function(radio) {
-            radio.addEventListener('change', handleCarrierChange);
+            if (response.success && response.payment_url) {
+                window.location.href = response.payment_url;
+            } else {
+                showToast(response.error || 'Errore durante il checkout', 'error');
+            }
         });
     }
 
-    /**
-     * Update cart summary
-     */
-    function updateCartSummary(summary) {
-        if (!summary) return;
-
-        // Update subtotal
-        const subtotalEl = document.getElementById('opc-subtotal');
-        if (subtotalEl) {
-            subtotalEl.textContent = summary.subtotal_formatted;
-        }
-
-        // Update shipping
-        const shippingEl = document.getElementById('opc-shipping');
-        if (shippingEl) {
-            shippingEl.textContent = summary.shipping_formatted;
-        }
-
-        // Update discounts
-        const discountsEl = document.getElementById('opc-discounts');
-        if (discountsEl) {
-            discountsEl.textContent = '-' + summary.discounts_formatted;
-        }
-
-        // Update total
-        const totalEl = document.getElementById('opc-total');
-        if (totalEl) {
-            totalEl.textContent = summary.total_formatted;
-        }
-    }
-
-    /**
-     * AJAX request helper
-     */
-    function ajaxRequest(action, data, callback) {
+    // AJAX helper
+    function ajax(action, data, callback) {
         data.action = action;
         data.token = OPC.token;
 
-        const formData = new FormData();
-        for (const key in data) {
+        var formData = new FormData();
+        for (var key in data) {
             if (data.hasOwnProperty(key)) {
                 formData.append(key, data[key]);
             }
@@ -645,83 +469,86 @@
             method: 'POST',
             body: formData
         })
-        .then(function(response) {
-            return response.json();
-        })
-        .then(function(data) {
-            if (callback) callback(data);
-        })
+        .then(function(response) { return response.json(); })
+        .then(function(json) { if (callback) callback(json); })
         .catch(function(error) {
-            console.error('OPC Ajax Error:', error);
+            console.error('OPC Error:', error);
             if (callback) callback({ success: false, error: 'Errore di connessione' });
         });
     }
 
-    /**
-     * Helper functions
-     */
-    function getValue(id) {
-        const el = document.getElementById(id);
-        return el ? el.value : '';
+    // DOM helpers
+    function on(selector, event, handler) {
+        var el = typeof selector === 'string' ? document.querySelector(selector) : selector;
+        if (el) el.addEventListener(event, handler);
     }
 
-    function getCheckboxValue(id) {
-        const el = document.getElementById(id);
-        return el ? (el.checked ? 1 : 0) : 0;
+    function getValue(selector) {
+        var el = document.querySelector(selector);
+        return el ? el.value.trim() : '';
     }
 
-    function showLoading() {
-        const loading = document.getElementById('opc-loading');
-        if (loading) {
-            loading.style.display = 'flex';
+    function setValue(selector, value) {
+        var el = document.querySelector(selector);
+        if (el) el.value = value;
+    }
+
+    function setValueIfExists(selector, value) {
+        if (value !== undefined && value !== null) {
+            setValue(selector, value);
         }
+    }
+
+    function setTextIfExists(selector, text) {
+        var el = document.querySelector(selector);
+        if (el && text !== undefined) el.textContent = text;
+    }
+
+    function isChecked(selector) {
+        var el = document.querySelector(selector);
+        return el ? el.checked : false;
+    }
+
+    function show(selector) {
+        var el = document.querySelector(selector);
+        if (el) el.style.display = 'block';
+    }
+
+    function hide(selector) {
+        var el = document.querySelector(selector);
+        if (el) el.style.display = 'none';
+    }
+
+    function isValidEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    // Loading
+    function showLoading() {
+        show('#opc-loading');
     }
 
     function hideLoading() {
-        const loading = document.getElementById('opc-loading');
-        if (loading) {
-            loading.style.display = 'none';
+        hide('#opc-loading');
+    }
+
+    // Toast notifications
+    function showToast(message, type) {
+        var toast = document.getElementById('opc-toast');
+        var msgEl = document.getElementById('opc-toast-message');
+
+        if (toast && msgEl) {
+            msgEl.textContent = message;
+            toast.className = 'opc-toast ' + (type || '');
+            toast.style.display = 'flex';
+
+            setTimeout(hideToast, 5000);
         }
     }
 
-    function showError(message) {
-        const modal = document.getElementById('opc-error-modal');
-        const content = document.getElementById('opc-error-content');
-
-        if (modal && content) {
-            content.innerHTML = message;
-            modal.style.display = 'flex';
-        } else {
-            alert(message);
-        }
-    }
-
-    function closeErrorModal() {
-        const modal = document.getElementById('opc-error-modal');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-    }
-
-    function showFieldError(field, message) {
-        clearFieldError(field);
-
-        field.classList.add('error');
-
-        const errorEl = document.createElement('span');
-        errorEl.className = 'opc-error-message';
-        errorEl.textContent = message;
-
-        field.parentNode.appendChild(errorEl);
-    }
-
-    function clearFieldError(field) {
-        field.classList.remove('error');
-
-        const existingError = field.parentNode.querySelector('.opc-error-message');
-        if (existingError) {
-            existingError.remove();
-        }
+    function hideToast() {
+        var toast = document.getElementById('opc-toast');
+        if (toast) toast.style.display = 'none';
     }
 
 })();

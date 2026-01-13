@@ -1,7 +1,7 @@
 <?php
 /**
  * One Page Checkout Front Controller
- * Main controller for the checkout page
+ * Unified checkout page - PlusPower style
  */
 
 class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
@@ -21,7 +21,6 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
             Tools::redirect('index.php?controller=cart');
         }
 
-        // Initialize checkout session data
         $this->initCheckoutSession();
     }
 
@@ -29,8 +28,6 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
     {
         if (!isset($this->context->cookie->opc_checkout_session)) {
             $this->checkout_session = [
-                'step' => 'personal_info',
-                'guest_email' => '',
                 'customer_type' => 'private',
                 'wants_invoice' => false,
             ];
@@ -59,12 +56,6 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
         Media::addJsDef([
             'opc_ajax_url' => $this->context->link->getModuleLink($this->module->name, 'ajax'),
             'opc_token' => Tools::getToken(false),
-            'opc_texts' => [
-                'error_required' => $this->trans('Questo campo è obbligatorio', [], 'Modules.Onepagecheckout.Shop'),
-                'error_email' => $this->trans('Inserisci un indirizzo email valido', [], 'Modules.Onepagecheckout.Shop'),
-                'error_phone' => $this->trans('Inserisci un numero di telefono valido', [], 'Modules.Onepagecheckout.Shop'),
-                'processing' => $this->trans('Elaborazione in corso...', [], 'Modules.Onepagecheckout.Shop'),
-            ],
         ]);
     }
 
@@ -74,15 +65,20 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
 
         $cart = $this->context->cart;
         $customer = $this->context->customer;
+        $is_logged = $customer->isLogged();
 
-        // Check if customer is logged in
-        $is_logged = $this->context->customer->isLogged();
-
-        // Get customer data if logged in
+        // Get customer data
         $customer_data = $this->getCustomerData();
 
-        // Get address data
+        // Get customer birthday parsed
+        $customer_birthday = $this->parseCustomerBirthday($customer);
+
+        // Get addresses
         $addresses = $this->getCustomerAddresses();
+
+        // Get current address data (for pre-filling form)
+        $address_data = $this->getCurrentAddressData($addresses);
+        $selected_address_id = (int)$cart->id_address_delivery;
 
         // Get cart summary
         $cart_summary = $this->getCartSummary();
@@ -90,28 +86,50 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
         // Get available carriers
         $carriers = $this->getAvailableCarriers();
 
-        // Get available payment methods
+        // Auto-select first carrier if none selected
+        if (!$cart->id_carrier && !empty($carriers)) {
+            $cart->id_carrier = (int)$carriers[0]['id_carrier'];
+            $delivery_option = [];
+            $delivery_option[(int)$cart->id_address_delivery] = $cart->id_carrier . ',';
+            $cart->setDeliveryOption($delivery_option);
+            $cart->save();
+            // Refresh carriers to mark selected
+            $carriers = $this->getAvailableCarriers();
+        }
+
+        // Get payment methods
         $payment_options = $this->getPaymentOptions();
 
-        // Get countries list
+        // Countries list
         $countries = Country::getCountries($this->context->language->id, true);
 
-        // Get customer groups for B2B/B2C
+        // Customer types
         $customer_types = [
             ['value' => 'private', 'label' => $this->trans('Privato', [], 'Modules.Onepagecheckout.Shop')],
             ['value' => 'company', 'label' => $this->trans('Azienda', [], 'Modules.Onepagecheckout.Shop')],
         ];
 
-        // Build date dropdowns
+        // Date dropdowns
         $days = range(1, 31);
         $months = $this->getMonthsList();
         $years = range(date('Y') - 100, date('Y') - 16);
         rsort($years);
 
+        // Default country
+        $default_country = (int)Configuration::get('PS_COUNTRY_DEFAULT');
+
+        // Terms configuration
+        $show_terms = (bool)Configuration::get('PS_CONDITIONS');
+        $terms_cms_id = (int)Configuration::get('PS_CONDITIONS_CMS_ID');
+        $termsLink = $terms_cms_id ? $this->context->link->getCMSLink($terms_cms_id) : '';
+
         $this->context->smarty->assign([
             'is_logged' => $is_logged,
             'customer_data' => $customer_data,
+            'customer_birthday' => $customer_birthday,
             'addresses' => $addresses,
+            'address_data' => $address_data,
+            'selected_address_id' => $selected_address_id,
             'cart_summary' => $cart_summary,
             'carriers' => $carriers,
             'payment_options' => $payment_options,
@@ -120,18 +138,10 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
             'days' => $days,
             'months' => $months,
             'years' => $years,
-            'guest_checkout_enabled' => (bool)Configuration::get('OPC_GUEST_CHECKOUT'),
-            'show_newsletter' => (bool)Configuration::get('OPC_SHOW_NEWSLETTER'),
-            'require_phone' => (bool)Configuration::get('OPC_REQUIRE_PHONE'),
+            'default_country' => $default_country,
             'checkout_session' => $this->checkout_session,
-            'id_cart' => (int)$cart->id,
-            'conditions_to_approve' => $this->getConditionsToApprove(),
-            'termsLink' => $this->context->link->getCMSLink(
-                Configuration::get('PS_CONDITIONS_CMS_ID'),
-                null,
-                null,
-                $this->context->language->id
-            ),
+            'show_terms' => $show_terms,
+            'termsLink' => $termsLink,
         ]);
 
         $this->setTemplate('module:onepagecheckout/views/templates/front/checkout.tpl');
@@ -148,18 +158,7 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
                 'lastname' => '',
                 'email' => '',
                 'birthday' => '',
-                'phone' => '',
-                'phone_mobile' => '',
             ];
-        }
-
-        // Get primary address phone if available
-        $phone = '';
-        $phone_mobile = '';
-        $addresses = $customer->getAddresses($this->context->language->id);
-        if (!empty($addresses)) {
-            $phone = $addresses[0]['phone'];
-            $phone_mobile = $addresses[0]['phone_mobile'];
         }
 
         return [
@@ -168,8 +167,20 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
             'lastname' => $customer->lastname,
             'email' => $customer->email,
             'birthday' => $customer->birthday,
-            'phone' => $phone,
-            'phone_mobile' => $phone_mobile,
+        ];
+    }
+
+    protected function parseCustomerBirthday($customer)
+    {
+        if (!$customer->isLogged() || empty($customer->birthday) || $customer->birthday == '0000-00-00') {
+            return ['day' => '', 'month' => '', 'year' => ''];
+        }
+
+        $parts = explode('-', $customer->birthday);
+        return [
+            'year' => isset($parts[0]) ? $parts[0] : '',
+            'month' => isset($parts[1]) ? $parts[1] : '',
+            'day' => isset($parts[2]) ? $parts[2] : '',
         ];
     }
 
@@ -184,6 +195,70 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
         return $customer->getAddresses($this->context->language->id);
     }
 
+    protected function getCurrentAddressData($addresses)
+    {
+        $cart = $this->context->cart;
+
+        // If cart has delivery address, load it
+        if ($cart->id_address_delivery) {
+            $address = new Address((int)$cart->id_address_delivery);
+            if (Validate::isLoadedObject($address)) {
+                return [
+                    'id_address' => (int)$address->id,
+                    'firstname' => $address->firstname,
+                    'lastname' => $address->lastname,
+                    'company' => $address->company,
+                    'vat_number' => $address->vat_number,
+                    'address1' => $address->address1,
+                    'address2' => $address->address2,
+                    'postcode' => $address->postcode,
+                    'city' => $address->city,
+                    'id_country' => (int)$address->id_country,
+                    'id_state' => (int)$address->id_state,
+                    'phone' => $address->phone,
+                    'phone_mobile' => $address->phone_mobile,
+                ];
+            }
+        }
+
+        // If customer has addresses, use the first one
+        if (!empty($addresses)) {
+            $addr = $addresses[0];
+            return [
+                'id_address' => (int)$addr['id_address'],
+                'firstname' => $addr['firstname'],
+                'lastname' => $addr['lastname'],
+                'company' => isset($addr['company']) ? $addr['company'] : '',
+                'vat_number' => isset($addr['vat_number']) ? $addr['vat_number'] : '',
+                'address1' => $addr['address1'],
+                'address2' => isset($addr['address2']) ? $addr['address2'] : '',
+                'postcode' => $addr['postcode'],
+                'city' => $addr['city'],
+                'id_country' => (int)$addr['id_country'],
+                'id_state' => isset($addr['id_state']) ? (int)$addr['id_state'] : 0,
+                'phone' => isset($addr['phone']) ? $addr['phone'] : '',
+                'phone_mobile' => isset($addr['phone_mobile']) ? $addr['phone_mobile'] : '',
+            ];
+        }
+
+        // Return empty data
+        return [
+            'id_address' => 0,
+            'firstname' => '',
+            'lastname' => '',
+            'company' => '',
+            'vat_number' => '',
+            'address1' => '',
+            'address2' => '',
+            'postcode' => '',
+            'city' => '',
+            'id_country' => (int)Configuration::get('PS_COUNTRY_DEFAULT'),
+            'id_state' => 0,
+            'phone' => '',
+            'phone_mobile' => '',
+        ];
+    }
+
     protected function getCartSummary()
     {
         $cart = $this->context->cart;
@@ -192,24 +267,28 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
 
         $products_formatted = [];
         foreach ($products as $product) {
+            // Calculate if there's a discount
+            $has_discount = isset($product['reduction_applies']) && $product['reduction_applies'];
+            $regular_price = $has_discount && isset($product['price_without_reduction'])
+                ? $product['price_without_reduction']
+                : $product['price_wt'];
+
             $products_formatted[] = [
                 'id_product' => $product['id_product'],
                 'id_product_attribute' => $product['id_product_attribute'],
                 'name' => $product['name'],
                 'reference' => $product['reference'],
                 'quantity' => $product['quantity'],
-                'price' => $product['price'],
                 'price_wt' => $product['price_wt'],
-                'total' => $product['total'],
                 'total_wt' => $product['total_wt'],
+                'regular_price_formatted' => Tools::displayPrice($regular_price),
+                'reduction_percent' => isset($product['reduction_percent']) ? $product['reduction_percent'] : 0,
                 'image' => $this->context->link->getImageLink(
                     $product['link_rewrite'],
                     $product['id_image'],
                     'cart_default'
                 ),
                 'attributes' => isset($product['attributes']) ? $product['attributes'] : '',
-                'availability_date' => isset($product['available_date']) ? $product['available_date'] : '',
-                'stock_quantity' => $product['stock_quantity'],
             ];
         }
 
@@ -218,14 +297,24 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
         $discounts = $cart->getOrderTotal(true, Cart::ONLY_DISCOUNTS);
         $total = $cart->getOrderTotal(true, Cart::BOTH);
 
+        // Format cart rules
+        $cart_rules_formatted = [];
+        foreach ($cart_rules as $rule) {
+            $cart_rules_formatted[] = [
+                'id_cart_rule' => $rule['id_cart_rule'],
+                'name' => $rule['name'],
+                'value' => Tools::displayPrice($rule['value_real']),
+            ];
+        }
+
         return [
             'products' => $products_formatted,
             'products_count' => count($products),
-            'cart_rules' => $cart_rules,
+            'cart_rules' => $cart_rules_formatted,
             'subtotal' => $subtotal,
             'subtotal_formatted' => Tools::displayPrice($subtotal),
             'shipping' => $shipping,
-            'shipping_formatted' => Tools::displayPrice($shipping),
+            'shipping_formatted' => $shipping > 0 ? Tools::displayPrice($shipping) : $this->trans('Gratis', [], 'Modules.Onepagecheckout.Shop'),
             'discounts' => $discounts,
             'discounts_formatted' => Tools::displayPrice($discounts),
             'total' => $total,
@@ -238,26 +327,17 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
         $cart = $this->context->cart;
         $id_address = (int)$cart->id_address_delivery;
 
-        if (!$id_address && $this->context->customer->isLogged()) {
-            $addresses = $this->context->customer->getAddresses($this->context->language->id);
-            if (!empty($addresses)) {
-                $id_address = (int)$addresses[0]['id_address'];
-                $cart->id_address_delivery = $id_address;
-                $cart->save();
-            }
-        }
-
-        if ($id_address) {
-            $id_zone = Address::getZoneById($id_address);
-        } else {
+        if (!$id_address) {
+            // Use default zone
             $id_zone = (int)Country::getIdZone((int)Configuration::get('PS_COUNTRY_DEFAULT'));
+        } else {
+            $id_zone = (int)Address::getZoneById($id_address);
         }
 
         $carriers = Carrier::getCarriersForOrder($id_zone, null, $cart);
 
         $carriers_formatted = [];
         foreach ($carriers as $carrier) {
-            $carrier_obj = new Carrier((int)$carrier['id_carrier']);
             $shipping_cost = $cart->getPackageShippingCost((int)$carrier['id_carrier'], true, null, null, $id_zone);
 
             $carriers_formatted[] = [
@@ -265,9 +345,9 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
                 'name' => $carrier['name'],
                 'delay' => $carrier['delay'],
                 'price' => $shipping_cost,
-                'price_formatted' => Tools::displayPrice($shipping_cost),
-                'logo' => $carrier_obj->logo ? _THEME_SHIP_DIR_ . $carrier_obj->logo : '',
-                'is_free' => $carrier['is_free'],
+                'price_formatted' => $shipping_cost > 0
+                    ? Tools::displayPrice($shipping_cost)
+                    : $this->trans('Gratis', [], 'Modules.Onepagecheckout.Shop'),
                 'selected' => ((int)$cart->id_carrier === (int)$carrier['id_carrier']),
             ];
         }
@@ -286,10 +366,10 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
                 continue;
             }
 
-            // Check if module has payment options method (PS 1.7+)
+            // Check if module has getPaymentOptions method (PS 1.7+)
             if (method_exists($module, 'getPaymentOptions')) {
                 try {
-                    $options = $module->getPaymentOptions($this->getCheckoutSession());
+                    $options = $module->getPaymentOptions($this->buildCheckoutSession());
                     if (is_array($options)) {
                         foreach ($options as $option) {
                             $payment_options[] = [
@@ -297,15 +377,11 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
                                 'call_to_action_text' => $option->getCallToActionText(),
                                 'logo' => $option->getLogo(),
                                 'action' => $option->getAction(),
-                                'inputs' => $option->getInputs(),
                                 'form' => $option->getForm(),
-                                'binary' => $option->isBinary(),
-                                'additional_information' => $option->getAdditionalInformation(),
                             ];
                         }
                     }
                 } catch (Exception $e) {
-                    // Module doesn't support this checkout, skip
                     continue;
                 }
             }
@@ -314,37 +390,15 @@ class OnePageCheckoutCheckoutModuleFrontController extends ModuleFrontController
         return $payment_options;
     }
 
-    protected function getCheckoutSession()
+    protected function buildCheckoutSession()
     {
-        $delivery_option = $this->context->cart->getDeliveryOption(null, false, false);
-        $delivery_address = new Address((int)$this->context->cart->id_address_delivery);
-
-        return new PrestaShop\PrestaShop\Adapter\Cart\CartCheckoutContext(
-            $this->context->cart,
-            $this->context->language,
-            $this->context->currency,
-            $this->context->customer
-        );
-    }
-
-    protected function getConditionsToApprove()
-    {
-        $cms = new CMS((int)Configuration::get('PS_CONDITIONS_CMS_ID'), $this->context->language->id);
-
-        $conditions = [];
-
-        if (Configuration::get('PS_CONDITIONS')) {
-            $conditions['terms-and-conditions'] = [
-                'label' => $this->trans(
-                    'Accetto i [1]termini e condizioni[/1] generali di vendita',
-                    ['[1]' => '<a href="' . $this->context->link->getCMSLink($cms) . '" target="_blank">', '[/1]' => '</a>'],
-                    'Modules.Onepagecheckout.Shop'
-                ),
-                'required' => true,
-            ];
-        }
-
-        return $conditions;
+        // Build a minimal checkout session that payment modules expect
+        return (object)[
+            'cart' => $this->context->cart,
+            'language' => $this->context->language,
+            'currency' => $this->context->currency,
+            'customer' => $this->context->customer,
+        ];
     }
 
     protected function getMonthsList()
