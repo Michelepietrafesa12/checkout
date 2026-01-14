@@ -708,7 +708,8 @@
 
     // Loading
     function showLoading() {
-        show('#opc-loading');
+        var el = document.getElementById('opc-loading');
+        if (el) el.style.display = 'flex';
     }
 
     function hideLoading() {
